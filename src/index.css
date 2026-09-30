@@ -1,2 +1,61 @@
+/* @import "tailwindcss";
+@plugin "daisyui"; */
+
+/* @import "tailwindcss";
+@plugin "daisyui"; */
+
 @import "tailwindcss";
-@plugin "daisyui";
+
+/* Disable stock daisyUI themes to use your custom variables */
+@plugin "daisyui" {
+  themes: false;
+}
+
+/* Register your premium, custom clinical theme configuration */
+@plugin "daisyui/theme" {
+  name: "psych-tracker";
+  default: true;
+  color-scheme: light;
+
+  /* Primary Action Accents (e.g. Save, Success) */
+  --color-primary: #26a69a;
+
+  /* Secondary Links and Chevron highlights */
+  --color-secondary: #00bcd4;
+
+  /* Badges and active subtle selection boxes (Mint/Ice tint) */
+  --color-accent: #b2dfdb;
+
+  /* Deep Teal color */
+  --color-neutral: #0f4950;
+  /* --color-neutral: #386653; */
+  /* --color-neutral: #b2dfdb; */
+
+  /* Clinical surface base colors (Anti-pale crisp white surfaces) */
+  --color-base-100: #ffffff;
+  --color-base-200: #f4f7f6; /* Clinical Fog background tint */
+}
+
+/* Custom utility overrides */
+.btn-primary {
+  background-color: #548471;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+}
+.btn-secondary {
+  background-color: #b2dfdb;
+  color: #0f4950;
+  border: none;
+  font-weight: 600;
+}
+.link {
+  color: #0f4950;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.link:hover {
+  color: #00bcd4;
+}
