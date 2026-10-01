@@ -11,4 +11,5 @@ export type MedicationListType = {
   effect: string;
   isExpanded: boolean;
   isEditing: boolean;
+  userId: string;
 };

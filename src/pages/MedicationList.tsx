@@ -2,7 +2,19 @@ import { useState } from "react";
 import { useMedications } from "@/network/medicationlist";
 import { MedicationListType } from "@/types/medicationType";
 
+import { useAuth } from "@/context/useAuth";
+
 export default function MedicationList() {
+  // 2. CONSUME the dynamic authentication session context
+  const { user, handleSignOut } = useAuth();
+
+  // 3. EXTRACT the id safely (handles _id or id depending on the User type shape)
+  //   const userId = user && "_id" in user ? (user._id as string) : "";
+  const userId =
+    user && "sub" in user
+      ? (user.sub as string)
+      : (user as any)?.id || (user as any)?._id || "";
+  // 4. PASS the live dynamic userId directly into your custom data hook
   const {
     medications,
     loading,
@@ -13,14 +25,31 @@ export default function MedicationList() {
     toggleEditMode,
     deleteMedication,
     addMedication,
-  } = useMedications();
+  } = useMedications(userId);
 
   const [isAllExpanded, setIsAllExpanded] = useState(true);
 
-  const handleToggleAllClick = (expandState: boolean) => {
-    toggleAll(expandState);
-    setIsAllExpanded(!expandState);
+  const handleOpenAll = () => {
+    toggleAll(true);
+    setIsAllExpanded(true);
   };
+
+  const handleCloseAll = () => {
+    toggleAll(false);
+    setIsAllExpanded(false);
+  };
+
+  // 5. ENFORCE a protection gate while the session initializes
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center p-4 space-y-3">
+        <span className="loading loading-spinner loading-md text-primary"></span>
+        <p className="text-sm font-medium text-neutral/50 tracking-wide">
+          Verifying user session security...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-200 flex justify-center items-start p-4 sm:p-10 font-sans antialiased text-neutral">
@@ -42,15 +71,38 @@ export default function MedicationList() {
 
           <nav className="flex items-center gap-5 text-sm font-semibold tracking-wider uppercase">
             <button
-              onClick={() => handleToggleAllClick(isAllExpanded)}
-              className="hover:text-secondary transition-colors cursor-pointer duration-200 text-white/90"
+              onClick={handleOpenAll}
+              className={`transition-colors cursor-pointer duration-200 ${
+                isAllExpanded
+                  ? "text-secondary font-bold"
+                  : "text-white/60 hover:text-white"
+              }`}
             >
-              {isAllExpanded ? "Open all" : "Close all"}
+              Open all
             </button>
+
+            <button
+              onClick={handleCloseAll}
+              className={`transition-colors cursor-pointer duration-200 ${
+                !isAllExpanded
+                  ? "text-secondary font-bold"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Close all
+            </button>
+
+            <span className="text-white/20 select-none">|</span>
+
             <button className="hover:text-secondary transition-colors cursor-pointer duration-200 text-white/90">
               Home
             </button>
-            <button className="hover:text-error transition-colors cursor-pointer duration-200 font-bold tracking-widest">
+
+            {/* 6. LINK the real handleSignOut method here! */}
+            <button
+              onClick={handleSignOut}
+              className="hover:text-error transition-colors cursor-pointer duration-200 font-bold tracking-widest text-white/90"
+            >
               Log out
             </button>
           </nav>
