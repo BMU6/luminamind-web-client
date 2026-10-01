@@ -1,17 +1,23 @@
 import { useState, useEffect } from "react";
 import { MedicationListType } from "@/types/medicationType";
 
-export function useMedications() {
+// 1. Accept the active userId as an initialization argument
+export function useMedications(userId: string) {
   const [medications, setMedications] = useState<MedicationListType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1. Fetch live medications via native fetch on mount
+  // 2. Fetch records filtering by the logged-in user
   useEffect(() => {
+    if (!userId) return;
+
     const fetchMedications = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:3000/medicationlist/");
+        // Appends the userId to the query parameter string
+        const response = await fetch(
+          `http://localhost:3000/medicationlist?userId=${userId}`,
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -19,33 +25,31 @@ export function useMedications() {
 
         const data = await response.json();
 
-        // Formats database records for frontend UI presentation toggles
         const processedData = data.map((med: any) => ({
           ...med,
-          id: med._id || med.id, // Handles standard Mongoose ObjectID mappings
-          isExpanded: false, // Kept closed by default for a clean appearance
-          isEditing: false, // Kept read-only until Edit is explicitly pressed
+          id: med._id || med.id,
+          isExpanded: false,
+          isEditing: false,
         }));
 
         setMedications(processedData);
         setError(null);
       } catch (err: any) {
         console.error("Database connection fault:", err);
-        setError(
-          "Could not retrieve medication registry records from server infrastructure.",
-        );
+        setError("Could not retrieve medication registry records.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchMedications();
-  }, []);
+  }, [userId]); // Re-runs if the user switching occurs
 
-  // 2. Commit a new tracking asset to the database via POST
+  // 3. Commit a new medication matching the active user
   const addMedication = async () => {
     try {
       const templateMedication = {
+        userId, // <-- INJECT THE USER ID HERE
         name: "New Medication Entry",
         dosage: "0 mg",
         schedule: { morning: false, noon: false, evening: false, night: false },
@@ -74,11 +78,10 @@ export function useMedications() {
     }
   };
 
-  //3. Update on edit mode
+  // 4. Update fields via PUT (sending userId to pass backend Zod schemas)
   const toggleEditMode = async (id: string) => {
     const currentMed = medications.find((m) => m.id === id);
 
-    // If the card is currently in edit mode and the user hits "SAVE"
     if (currentMed && currentMed.isEditing) {
       try {
         const response = await fetch(
@@ -87,6 +90,7 @@ export function useMedications() {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              userId, // <-- INCLUDE IN SAVES TO PASS THE BACKEND VALIDATION
               name: currentMed.name,
               dosage: currentMed.dosage,
               schedule: currentMed.schedule,
@@ -95,16 +99,10 @@ export function useMedications() {
           },
         );
 
-        if (!response.ok) {
-          throw new Error(
-            `Server rejected update configuration status: ${response.status}`,
-          );
-        }
+        if (!response.ok) throw new Error("PUT request failed");
 
-        // Capture the updated document straight from the backend response body
         const updatedDoc = await response.json();
 
-        // Map the backend payload state securely to our list array
         setMedications((prev) =>
           prev.map((m) =>
             m.id === id
@@ -114,29 +112,23 @@ export function useMedications() {
                   dosage: updatedDoc.dosage,
                   schedule: updatedDoc.schedule,
                   effect: updatedDoc.effect,
-                  isEditing: false, // Turn off editing field overlays
+                  isEditing: false,
                 }
               : m,
           ),
         );
-        return; // Exit execution safely since state mapping is fully complete
+        return;
       } catch (err) {
-        console.error(
-          "Failed updating specific database document reference:",
-          err,
-        );
-        // Fallback: don't close edit panel if saving fails so the patient doesn't lose entered text
+        console.error("Failed updating database document reference:", err);
         return;
       }
     }
 
-    // If the card is read-only and the user hits "EDIT", simply flip the toggle field overlay
     setMedications((prev) =>
       prev.map((m) => (m.id === id ? { ...m, isEditing: !m.isEditing } : m)),
     );
   };
 
-  // 4. Remove tracking entry out of the live ecosystem via DELETE
   const deleteMedication = async (id: string) => {
     try {
       const response = await fetch(
@@ -145,16 +137,13 @@ export function useMedications() {
           method: "DELETE",
         },
       );
-
       if (!response.ok) throw new Error("DELETE request failed");
-
       setMedications((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {
-      console.error("Failed deleting index row reference target entry:", err);
+      console.error("Failed deleting row:", err);
     }
   };
 
-  // Presentation layout UI interactive helpers
   const toggleAll = (expand: boolean) => {
     setMedications((prev) => prev.map((m) => ({ ...m, isExpanded: expand })));
   };
