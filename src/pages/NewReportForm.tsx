@@ -100,11 +100,18 @@ export default function NewReportForm() {
               Log Daily Progress
             </h2>
           </div>
-          <span className="text-xs font-bold text-neutral/40 tracking-wider bg-base-200 px-3 py-1.5 rounded-xl">
+          {/* Updated Time & Date Display */}
+          <span className="text-xs font-bold text-neutral/40 tracking-wider bg-base-200 px-3 py-1.5 rounded-xl text-right">
             {new Date().toLocaleDateString(undefined, {
               weekday: "short",
               month: "short",
               day: "numeric",
+            })}{" "}
+            @{" "}
+            {new Date().toLocaleTimeString(undefined, {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true, // Forces AM/PM output format
             })}
           </span>
         </header>
@@ -134,7 +141,18 @@ export default function NewReportForm() {
               )}
             </div>
           </div>
-
+          {/* Notes Log Message Fields */}
+          <div className="form-control space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-widest text-neutral/60 block">
+              Daily Notes & Observations (Message)
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Describe any custom psychological observations, side-effects, or notable therapy milestones encountered today..."
+              className="textarea textarea-bordered rounded-2xl text-sm focus:outline-primary shadow-inner h-24 p-4 border-base-200 bg-base-100 w-full"
+            />
+          </div>
           {/* 5-Metric Dynamic Color-Shifting Radio Button Matrix */}
           <div className="space-y-6">
             {[
@@ -248,19 +266,6 @@ export default function NewReportForm() {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Notes Log Message Fields */}
-          <div className="form-control space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-widest text-neutral/60 block">
-              Daily Notes & Observations (Message)
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Describe any custom psychological observations, side-effects, or notable therapy milestones encountered today..."
-              className="textarea textarea-bordered rounded-2xl text-sm focus:outline-primary shadow-inner h-24 p-4 border-base-200 bg-base-100 w-full"
-            />
           </div>
 
           {/* Submission Operational Bar */}

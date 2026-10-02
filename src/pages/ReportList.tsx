@@ -73,6 +73,7 @@ export default function ReportList() {
 
           {!loading &&
             reports.map((rep) => {
+              // 1. Format the standard date string block
               const displayDate = new Date(rep.date).toLocaleDateString(
                 undefined,
                 {
@@ -83,15 +84,29 @@ export default function ReportList() {
                 },
               );
 
+              // 2. Format the custom historical AM/PM time string block
+              const displayTime = new Date(rep.date).toLocaleTimeString(
+                undefined,
+                {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true, // Forces clean AM/PM output format matching your form header
+                },
+              );
+
               return (
                 <div
                   key={rep.id}
-                  onClick={() => navigate(`/reports/${rep.id}`)} // Routes to details view dynamically on-click
+                  onClick={() => navigate(`/reports/${rep.id}`)}
                   className="flex items-center justify-between p-5 border border-base-200 rounded-2xl bg-base-100 hover:border-primary/40 hover:shadow-md cursor-pointer transition-all duration-200 select-none"
                 >
                   <div className="space-y-1">
+                    {/* Updated Header Title combining Date @ Time */}
                     <h4 className="font-bold text-base text-neutral tracking-wide">
-                      {displayDate} Summary
+                      {displayDate}{" "}
+                      <span className="text-neutral/40 font-medium text-sm ml-1">
+                        @ {displayTime}
+                      </span>
                     </h4>
                     <p className="text-xs text-neutral/50 line-clamp-1 max-w-md font-medium">
                       {rep.message ||

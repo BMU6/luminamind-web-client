@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router"; // Unified package import matching App.tsx
+import { useParams, useNavigate } from "react-router";
 
 export default function ReportDetails() {
   const { id } = useParams<{ id: string }>();
@@ -8,7 +8,7 @@ export default function ReportDetails() {
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // 1. Fetch single progress log summary asset from your updated plural backend route
+  // 1. Fetch single progress log summary asset from backend
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -55,12 +55,14 @@ export default function ReportDetails() {
   const snapshotMeds = Array.isArray(report.activeMedications)
     ? report.activeMedications
     : [];
+
   const displayDate = new Date(report.date).toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
     day: "numeric",
     year: "numeric",
   });
+
   return (
     <div className="min-h-screen bg-base-200 flex justify-center items-start p-4 sm:p-10 font-sans antialiased text-neutral">
       <div className="w-full max-w-2xl bg-base-100 border border-base-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
@@ -68,7 +70,7 @@ export default function ReportDetails() {
         <header className="flex justify-between items-center pb-4 border-b border-base-200">
           <div>
             <button
-              onClick={() => navigate("/reports")} // Navigates back absolutely
+              onClick={() => navigate("/reports")}
               className="text-xs font-bold text-primary tracking-wide hover:underline cursor-pointer mb-1 block"
             >
               ← Back to Reports List
@@ -77,9 +79,6 @@ export default function ReportDetails() {
               {displayDate}
             </h2>
           </div>
-          <span className="badge badge-accent bg-accent text-neutral font-bold px-3 py-2.5 rounded-lg text-xs border-none select-none">
-            Saved Snapshot
-          </span>
         </header>
 
         {/* Prescription Snapshot View */}
@@ -105,70 +104,6 @@ export default function ReportDetails() {
           </div>
         </div>
 
-        {/* 5 Clinical Metric Visual Progress Scales Grid */}
-        <div className="space-y-4">
-          {[
-            {
-              key: "mood",
-              label: "Mood Scale",
-              left: "Severe Low",
-              right: "Excellent",
-            },
-            {
-              key: "irritability",
-              label: "Irritability",
-              left: "Calm / None",
-              right: "Severe",
-            },
-            {
-              key: "energy",
-              label: "Energy Level",
-              left: "Fatigue",
-              right: "High Alert",
-            },
-            {
-              key: "sleep",
-              label: "Sleep Quality",
-              left: "Restless",
-              right: "Excellent Rest",
-            },
-            {
-              key: "concentration",
-              label: "Concentration",
-              left: "Brain Fog",
-              right: "Very Sharp",
-            },
-          ].map((item) => {
-            const scoreValue = report[item.key] ?? 0;
-            return (
-              <div
-                key={item.key}
-                className="p-4 border border-base-200 bg-base-200/10 rounded-xl space-y-2 shadow-inner"
-              >
-                <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-neutral/65">
-                  <span>{item.label}</span>
-                  <span className="text-primary font-black bg-primary/10 px-2 py-0.5 rounded-md text-[13px]">
-                    {scoreValue} / 5
-                  </span>
-                </div>
-                {/* Fixed read-only visual slider bar track map indicator line formatting */}
-                <input
-                  type="range"
-                  min="0"
-                  max="5"
-                  value={scoreValue}
-                  disabled
-                  className="range range-primary range-xs pointer-events-none opacity-85 select-none"
-                />
-                <div className="flex justify-between text-[9px] font-bold text-neutral/40 px-0.5 uppercase tracking-wider">
-                  <span>{item.left}</span>
-                  <span>{item.right}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
         {/* Clinical Notes Summary Observation Output Context Card */}
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-neutral/60 block">
@@ -182,6 +117,131 @@ export default function ReportDetails() {
               </span>
             )}
           </div>
+        </div>
+
+        {/* 5 Clinical Metric Segment Matrix */}
+        <div className="space-y-6">
+          {[
+            {
+              key: "mood",
+              label: "Mood Scale",
+              left: "Severe Low",
+              right: "Excellent",
+              invertColor: true,
+            },
+            {
+              key: "irritability",
+              label: "Irritability",
+              left: "Calm / None",
+              right: "Severe",
+              invertColor: false,
+            },
+            {
+              key: "energy",
+              label: "Energy Level",
+              left: "Fatigue",
+              right: "High Alert",
+              invertColor: true,
+            },
+            {
+              key: "sleep",
+              label: "Sleep Quality",
+              left: "Restless",
+              right: "Excellent Rest",
+              invertColor: true,
+            },
+            {
+              key: "concentration",
+              label: "Concentration",
+              left: "Brain Fog",
+              right: "Very Sharp",
+              invertColor: true,
+            },
+          ].map((item) => {
+            const scoreValue = report[item.key] ?? 0;
+
+            return (
+              <div
+                key={item.key}
+                className="p-6 border border-base-200/60 bg-base-100 rounded-3xl space-y-4 shadow-sm"
+              >
+                {/* Metric Label and Active Selection Badge Header Row */}
+                <div className="flex justify-between items-center px-1">
+                  <span className="font-bold text-xs uppercase tracking-widest text-neutral/70">
+                    {item.label}
+                  </span>
+                  <span className="text-neutral font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
+                    Score: {scoreValue}
+                  </span>
+                </div>
+
+                {/* Clean Segment Matrix Workspace */}
+                <div className="space-y-2">
+                  {/* Horizontal Block Row */}
+                  <div className="flex items-center justify-between bg-base-200/10 rounded-2xl border border-base-200/40 p-1.5 gap-1 w-full">
+                    {[0, 1, 2, 3, 4, 5].map((val: number) => {
+                      const isSelected = scoreValue === val;
+
+                      // 1. Pre-compiled clean theme configurations mapping rules
+                      const standardColorMap: Record<number, string> = {
+                        0: "bg-error text-white font-black shadow-md scale-[1.02]",
+                        1: "bg-error text-white font-black shadow-md scale-[1.02]",
+                        2: "bg-warning text-white font-black shadow-md scale-[1.02]",
+                        3: "bg-warning text-white font-black shadow-md scale-[1.02]",
+                        4: "bg-success text-white font-black shadow-md scale-[1.02]",
+                        5: "bg-success text-white font-black shadow-md scale-[1.02]",
+                      };
+
+                      const invertedColorMap: Record<number, string> = {
+                        0: "bg-success text-white font-black shadow-md scale-[1.02]",
+                        1: "bg-success text-white font-black shadow-md scale-[1.02]",
+                        2: "bg-warning text-white font-black shadow-md scale-[1.02]",
+                        3: "bg-warning text-white font-black shadow-md scale-[1.02]",
+                        4: "bg-error text-white font-black shadow-md scale-[1.02]",
+                        5: "bg-error text-white font-black shadow-md scale-[1.02]",
+                      };
+
+                      // 2. Safely apply style rules
+                      let designClass = "bg-base-200/30 text-neutral/40";
+                      if (isSelected) {
+                        designClass = item.invertColor
+                          ? standardColorMap[val]
+                          : invertedColorMap[val];
+                      }
+
+                      return (
+                        <div
+                          key={val}
+                          className="flex-1 relative select-none cursor-not-allowed text-center"
+                        >
+                          <input
+                            type="radio"
+                            name={item.key}
+                            value={val}
+                            checked={isSelected}
+                            disabled
+                            className="sr-only"
+                          />
+
+                          <div
+                            className={`py-3.5 px-2 rounded-xl text-sm font-bold transition-all duration-200 ${designClass}`}
+                          >
+                            {val}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Under-Grid Anchor Labels Row */}
+                  <div className="flex justify-between items-center px-2 text-[10px] uppercase font-bold tracking-wider text-neutral/40">
+                    <span>{item.left}</span>
+                    <span>{item.right}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
