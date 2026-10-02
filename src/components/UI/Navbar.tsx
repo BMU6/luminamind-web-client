@@ -35,6 +35,9 @@ const Navbar = () => {
           {signedIn ? (
             <>
               <li>
+                <NavLink to="/reports">Reports</NavLink>
+              </li>
+              <li>
                 <NavLink to="/medicationlist">Medication List</NavLink>
               </li>
               <li>
