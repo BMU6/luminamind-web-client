@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "@/context";
 
 const Navbar = () => {
-  const { handleSignOut, signedIn, user } = useAuth();
+  const { handleSignOut, signedIn, loading, user } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -29,31 +29,32 @@ const Navbar = () => {
       <div className="flex-none flex items-center">
         {user && <p>{`Welcome back, ${user.email}`}</p>}
         <ul className="menu menu-horizontal px-1">
-          <li>
-            <NavLink to="/">Home</NavLink>
-          </li>
-          {signedIn ? (
-            <>
-              <li>
-                <NavLink to="/reports">Reports</NavLink>
-              </li>
-              <li>
-                <NavLink to="/medicationlist">Medication List</NavLink>
-              </li>
-              <li>
-                <button onClick={handleLogout}>Logout</button>
-              </li>
-            </>
-          ) : (
-            <>
-              <li>
-                <NavLink to="/register">Register</NavLink>
-              </li>
-              <li>
-                <NavLink to="/login">Login</NavLink>
-              </li>
-            </>
-          )}
+          {!loading &&
+            (signedIn ? (
+              <>
+                <li>
+                  <NavLink to="/">Home</NavLink>
+                </li>
+                <li>
+                  <NavLink to="/reports">Reports</NavLink>
+                </li>
+                <li>
+                  <NavLink to="/medicationlist">Medication List</NavLink>
+                </li>
+                <li>
+                  <button onClick={handleLogout}>Logout</button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <NavLink to="/register">Register</NavLink>
+                </li>
+                <li>
+                  <NavLink to="/login">Login</NavLink>
+                </li>
+              </>
+            ))}
         </ul>
       </div>
     </div>

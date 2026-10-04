@@ -69,6 +69,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value: AuthContextType = {
     signedIn,
+    loading: checkSession,
     user,
     handleSignIn,
     handleSignOut,

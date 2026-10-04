@@ -6,6 +6,7 @@ export type DbEntry = {
   updatedAt?: string;
 };
 
+export type AttributeNames = 'mood' | 'energy' | 'sleep' | 'concentration' | 'irritability';
 
 export type User = DbEntry & {
   email: string;
@@ -22,6 +23,7 @@ export type RegisterData = {
 
 export type AuthContextType = {
   signedIn: boolean;
+  loading: boolean; // true while the stored session is being checked
   user: User | null;
   handleSignIn: ({ email, password }: LoginData) => Promise<void>;
   handleSignOut: () => Promise<void>;

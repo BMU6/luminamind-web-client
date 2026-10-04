@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router';
+import { Link, Navigate, useLocation } from 'react-router';
 import { toast } from 'react-toastify';
 import type { LoginData } from '@/types';
 import { useAuth } from '@/context';
 
 const Login = () => {
   const { signedIn, handleSignIn } = useAuth();
+  // ProtectedRoute stores the page the user wanted in location.state.from
+  const from = useLocation().state?.from?.pathname ?? '/';
   const [{ email, password }, setForm] = useState<LoginData>({
     email: '',
     password: '',
@@ -32,7 +34,7 @@ const Login = () => {
     }
   };
   if (signedIn) {
-    return <Navigate to='/' />;
+    return <Navigate to={from} replace />;
   } else {
     return (
       <form className='my-5 md:w-1/2 mx-auto flex flex-col gap-3' onSubmit={handleSubmit}>
