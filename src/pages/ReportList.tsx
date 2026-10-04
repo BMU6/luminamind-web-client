@@ -2,17 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router"; // Assumes standard React Router integration
 import { useAuth } from "@/context/useAuth";
 import { useReports } from "@/utils/reports";
+import { MedicationListType } from "@/types/medicationType";
 
 export default function ReportList() {
   const { user } = useAuth();
+  const userId = user?._id ?? "";
+  // const { user } = useAuth();
   const navigate = useNavigate();
-  const userId =
-    user && "sub" in user
-      ? (user.sub as string)
-      : (user as any)?.id || (user as any)?._id || "";
+  // const userId =
+  //   user && "sub" in user
+  //     ? (user.sub as string)
+  //     : (user as any)?.id || (user as any)?._id || "";
 
-  const { reports, loading, addReport } = useReports(userId);
-  const [availableMeds, setAvailableMeds] = useState<any[]>([]);
+  const { reports, loading, } = useReports(userId);
+  const [, setAvailableMeds] = useState<MedicationListType[]>([]);
 
   useEffect(() => {
     if (!userId) return;
