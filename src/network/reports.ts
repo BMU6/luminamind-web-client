@@ -1,5 +1,4 @@
 import { VITE_API_URL } from '@/config';
-import { AUTH_URL } from '@/config';
 import { getAccessToken } from '@/storage';
 
 // The medication snapshot stored inside a report (name and dosage as they were at that time)
