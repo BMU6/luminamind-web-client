@@ -84,7 +84,7 @@ export function useReports(userId: string) {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:3000/report/${id}`, {
+      const response = await fetch(`http://localhost:3000/reports/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("DELETE action failed");

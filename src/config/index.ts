@@ -15,6 +15,6 @@ if (!parsedEnv.success) {
 	throw new Error('Invalid environment variables. Check the console for details.');
 }
 
-// export const { VITE_APP_API_URL, VITE_APP_AUTH_SERVER_URL } = parsedEnv.data;
+// export const { AUTH_URL, VITE_APP_AUTH_SERVER_URL } = parsedEnv.data;
 export const { VITE_API_URL } = parsedEnv.data;
 export const AUTH_URL = `${VITE_API_URL}/auth`;
