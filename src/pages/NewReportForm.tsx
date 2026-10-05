@@ -206,7 +206,7 @@ export default function NewReportForm() {
                   <span className="font-bold text-xs uppercase tracking-widest text-neutral/70">
                     {item.label}
                   </span>
-                  <span className="text-neutral font-black bg-base-200 border border-base-300 px-2.5 py-0.5 rounded-md text-[13px] shadow-xs">
+                  <span className="text-neutral font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
                     Score: {item.state}
                   </span>
                 </div>
@@ -214,34 +214,43 @@ export default function NewReportForm() {
                 {/* Horizontal Radio Inputs Row Container */}
                 <div className="flex justify-between items-center bg-base-100 p-3 rounded-xl border border-base-200 gap-2">
                   {[0, 1, 2, 3, 4, 5].map((score) => {
-                    // 1. Calculate matching color styles depending on severity metrics configuration
-                    // If invertColor is true: higher is healthy (Green). If false: higher is severe (Red/Orange).
-                    const isHealthyHigher = item.invertColor;
-                    const relativeScore = isHealthyHigher ? score : 5 - score;
-
-                    let activeBgColor = "bg-neutral text-white"; // Baseline fallback
-
-                    if (relativeScore <= 1) {
-                      activeBgColor =
-                        "bg-rose-600 border-rose-600 text-white font-black shadow-md"; // Severe distress indicators
-                    } else if (relativeScore === 2 || relativeScore === 3) {
-                      activeBgColor =
-                        "bg-amber-500 border-amber-500 text-white font-black shadow-md"; // Warning tracking intermediate points
-                    } else if (relativeScore >= 4) {
-                      activeBgColor =
-                        "bg-emerald-600 border-emerald-600 text-white font-black shadow-md"; // Healthy/Optimal states
-                    }
-
                     const isSelected = item.state === score;
+
+                    // Unselected fallback look and feel classes
+                    let activeStyles =
+                      "bg-base-200/40 text-neutral/50 border-base-200/20 hover:bg-base-200 hover:text-neutral hover:border-base-300";
+
+                    // Apply static, unpurgeable classes explicitly when selected
+                    if (isSelected) {
+                      if (item.label === "Irritability") {
+                        // High is BAD (e.g., Irritability turning red)
+                        if (score <= 1)
+                          activeStyles =
+                            "bg-emerald-600 border-emerald-600 text-white font-black shadow-md scale-105";
+                        else if (score <= 3)
+                          activeStyles =
+                            "bg-amber-500 border-amber-500 text-white font-black shadow-md scale-105";
+                        else
+                          activeStyles =
+                            "bg-rose-600 border-rose-600 text-white font-black shadow-md scale-105";
+                      } else {
+                        // High is GOOD (e.g., Mood, Energy, Sleep, Concentration turning green)
+                        if (score <= 1)
+                          activeStyles =
+                            "bg-rose-600 border-rose-600 text-white font-black shadow-md scale-105";
+                        else if (score <= 3)
+                          activeStyles =
+                            "bg-amber-500 border-amber-500 text-white font-black shadow-md scale-105";
+                        else
+                          activeStyles =
+                            "bg-emerald-600 border-emerald-600 text-white font-black shadow-md scale-105";
+                      }
+                    }
 
                     return (
                       <label
                         key={score}
-                        className={`flex flex-col items-center justify-center flex-1 py-2.5 rounded-xl cursor-pointer border transition-all duration-200 select-none ${
-                          isSelected
-                            ? `${activeBgColor} scale-105`
-                            : "bg-base-200/40 text-neutral/50 border-base-200/20 hover:bg-base-200 hover:text-neutral hover:border-base-300"
-                        }`}
+                        className={`flex flex-col items-center justify-center flex-1 py-2.5 rounded-xl cursor-pointer border transition-all duration-200 select-none ${activeStyles}`}
                       >
                         <input
                           type="radio"
@@ -269,7 +278,7 @@ export default function NewReportForm() {
           </div>
 
           {/* Submission Operational Bar */}
-          <div className="flex justify-end pt-2 border-t border-base-200">
+          <div className="flex justify-end pt-4 border-t border-base-200">
             <button
               type="submit"
               disabled={submitting}

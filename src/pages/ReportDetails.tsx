@@ -120,6 +120,7 @@ export default function ReportDetails() {
         </div>
 
         {/* 5 Clinical Metric Segment Matrix */}
+        {/* 5 Clinical Metric Segment Matrix */}
         <div className="space-y-6">
           {[
             {
@@ -127,38 +128,34 @@ export default function ReportDetails() {
               label: "Mood Scale",
               left: "Severe Low",
               right: "Excellent",
-              invertColor: true,
             },
             {
               key: "irritability",
               label: "Irritability",
               left: "Calm / None",
               right: "Severe",
-              invertColor: false,
             },
             {
               key: "energy",
               label: "Energy Level",
               left: "Fatigue",
               right: "High Alert",
-              invertColor: true,
             },
             {
               key: "sleep",
               label: "Sleep Quality",
               left: "Restless",
               right: "Excellent Rest",
-              invertColor: true,
             },
             {
               key: "concentration",
               label: "Concentration",
               left: "Brain Fog",
               right: "Very Sharp",
-              invertColor: true,
             },
           ].map((item) => {
-            const scoreValue = report[item.key] ?? 0;
+            const scoreValue =
+              typeof report[item.key] === "number" ? report[item.key] : 0;
 
             return (
               <div
@@ -177,54 +174,42 @@ export default function ReportDetails() {
 
                 {/* Clean Segment Matrix Workspace */}
                 <div className="space-y-2">
-                  {/* Horizontal Block Row */}
                   <div className="flex items-center justify-between bg-base-200/10 rounded-2xl border border-base-200/40 p-1.5 gap-1 w-full">
                     {[0, 1, 2, 3, 4, 5].map((val: number) => {
                       const isSelected = scoreValue === val;
 
-                      // 1. Pre-compiled clean theme configurations mapping rules
-                      const standardColorMap: Record<number, string> = {
-                        0: "bg-error text-white font-black shadow-md scale-[1.02]",
-                        1: "bg-error text-white font-black shadow-md scale-[1.02]",
-                        2: "bg-warning text-white font-black shadow-md scale-[1.02]",
-                        3: "bg-warning text-white font-black shadow-md scale-[1.02]",
-                        4: "bg-success text-white font-black shadow-md scale-[1.02]",
-                        5: "bg-success text-white font-black shadow-md scale-[1.02]",
-                      };
+                      // Default non-selected cells setup appearance layout styles
+                      let activeStyles =
+                        "bg-base-200/30 text-neutral/40 font-medium";
 
-                      const invertedColorMap: Record<number, string> = {
-                        0: "bg-success text-white font-black shadow-md scale-[1.02]",
-                        1: "bg-success text-white font-black shadow-md scale-[1.02]",
-                        2: "bg-warning text-white font-black shadow-md scale-[1.02]",
-                        3: "bg-warning text-white font-black shadow-md scale-[1.02]",
-                        4: "bg-error text-white font-black shadow-md scale-[1.02]",
-                        5: "bg-error text-white font-black shadow-md scale-[1.02]",
-                      };
-
-                      // 2. Safely apply style rules
-                      let designClass = "bg-base-200/30 text-neutral/40";
                       if (isSelected) {
-                        designClass = item.invertColor
-                          ? standardColorMap[val]
-                          : invertedColorMap[val];
+                        if (item.label === "Irritability") {
+                          if (val <= 1)
+                            activeStyles =
+                              "bg-emerald-600 text-white font-black shadow-md scale-[1.02]";
+                          else if (val <= 3)
+                            activeStyles =
+                              "bg-amber-500 text-white font-black shadow-md scale-[1.02]";
+                          else
+                            activeStyles =
+                              "bg-rose-600 text-white font-black shadow-md scale-[1.02]";
+                        } else {
+                          if (val <= 1)
+                            activeStyles =
+                              "bg-rose-600 text-white font-black shadow-md scale-[1.02]";
+                          else if (val <= 3)
+                            activeStyles =
+                              "bg-amber-500 text-white font-black shadow-md scale-[1.02]";
+                          else
+                            activeStyles =
+                              "bg-emerald-600 text-white font-white font-black shadow-md scale-[1.02]";
+                        }
                       }
 
                       return (
-                        <div
-                          key={val}
-                          className="flex-1 relative select-none cursor-not-allowed text-center"
-                        >
-                          <input
-                            type="radio"
-                            name={item.key}
-                            value={val}
-                            checked={isSelected}
-                            disabled
-                            className="sr-only"
-                          />
-
+                        <div key={val} className="flex-1 text-center">
                           <div
-                            className={`py-3.5 px-2 rounded-xl text-sm font-bold transition-all duration-200 ${designClass}`}
+                            className={`py-3.5 px-2 rounded-xl text-sm transition-all duration-200 ${activeStyles}`}
                           >
                             {val}
                           </div>

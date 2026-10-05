@@ -10,9 +10,10 @@ export type Report = {
   date: string;
   activeMedications: ActiveMedicationSnapshot[];
   mood: number;
-  anxiety: number;
+  irritability: number;
   energy: number;
   sleep: number;
+  concentration: number;
   message: string;
   createdAt: string;
 };
