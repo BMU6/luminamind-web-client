@@ -1,4 +1,4 @@
-import { VITE_APP_AUTH_SERVER_URL } from '@/config';
+import { AUTH_URL } from '@/config';
 import { setAccessToken } from '@/storage';
 
 const originalFetch = window.fetch;
@@ -7,7 +7,7 @@ const originalFetch = window.fetch;
 let refreshing: Promise<string> | null = null;
 
 const refreshAccessToken = async (): Promise<string> => {
-  const res = await originalFetch(`${VITE_APP_AUTH_SERVER_URL}/refresh`, {
+  const res = await originalFetch(`${AUTH_URL}/refresh`, {
     method: 'POST',
     credentials: 'include',
   });
@@ -42,7 +42,7 @@ window.fetch = async (url, options) => {
 };
 
 
-// import { VITE_APP_AUTH_SERVER_URL } from '@/config';
+// import { AUTH_URL } from '@/config';
 // import { setAccessToken } from '@/storage';
 
 // const originalFetch = window.fetch;
@@ -59,7 +59,7 @@ window.fetch = async (url, options) => {
 //   if (!authHeader?.includes('token_expired')) return originalRes;
 
 //   console.log('ATTEMPT REFRESH');
-//   const refreshRes = await originalFetch(`${VITE_APP_AUTH_SERVER_URL}/refresh`, {
+//   const refreshRes = await originalFetch(`${AUTH_URL}/refresh`, {
 //     method: 'POST',
 //     credentials: 'include',
 //   });

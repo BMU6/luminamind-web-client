@@ -1,4 +1,4 @@
-import { VITE_APP_AUTH_SERVER_URL } from '@/config';
+import { AUTH_URL } from '@/config';
 import type { User, RegisterData, LoginData } from '@/types';
 import { getAccessToken } from '@/storage';
 
@@ -7,7 +7,7 @@ type SuccessRes = { message: string };
 type TokenRes = SuccessRes & { accessToken: string };
 
 const login = async (formData: LoginData): Promise<TokenRes> => {
-  const res = await fetch(`${VITE_APP_AUTH_SERVER_URL}/login`, {
+  const res = await fetch(`${AUTH_URL}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -27,7 +27,7 @@ const login = async (formData: LoginData): Promise<TokenRes> => {
 
 const me = async (): Promise<User> => {
   const accessToken = getAccessToken();
-  const res = await fetch(`${VITE_APP_AUTH_SERVER_URL}/me`, {
+  const res = await fetch(`${AUTH_URL}/me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -43,7 +43,7 @@ const me = async (): Promise<User> => {
 };
 
 const logout = async (): Promise<TokenRes> => {
-  const res = await fetch(`${VITE_APP_AUTH_SERVER_URL}/logout`, {
+  const res = await fetch(`${AUTH_URL}/logout`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -58,7 +58,7 @@ const logout = async (): Promise<TokenRes> => {
 };
 
 const register = async (formData: RegisterData): Promise<TokenRes> => {
-  const res = await fetch(`${VITE_APP_AUTH_SERVER_URL}/register`, {
+  const res = await fetch(`${AUTH_URL}/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ const register = async (formData: RegisterData): Promise<TokenRes> => {
 };
 
 const refresh = async (): Promise<TokenRes> => {
-  const res = await fetch(`${VITE_APP_AUTH_SERVER_URL}/refresh`, {
+  const res = await fetch(`${AUTH_URL}/refresh`, {
     method: 'POST',
     credentials: 'include',
   });
