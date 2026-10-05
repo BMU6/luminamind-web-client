@@ -79,7 +79,7 @@ export default function NewReportForm() {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center p-4">
         <span className="loading loading-spinner loading-md text-primary"></span>
-        <p className="ml-3 text-sm font-medium text-neutral/50">
+        <p className="ml-3 text-sm font-medium text-base-content/50">
           Verifying session context...
         </p>
       </div>
@@ -114,21 +114,21 @@ export default function NewReportForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Automated Medication Treatment Snapshot Badge Display */}
         <div className="bg-base-200/40 p-4 rounded-xl border border-base-200 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-neutral/60 block">
+          <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
             Auto-Attaching Current Prescription Snapshot
           </span>
           <div className="flex flex-wrap gap-2">
             {loadingMeds ? (
-              <span className="loading loading-dots loading-xs text-neutral/40"></span>
+              <span className="loading loading-dots loading-xs text-base-content/40"></span>
             ) : availableMeds.length === 0 ? (
-              <span className="text-xs text-neutral/40 italic">
+              <span className="text-xs text-base-content/40 italic">
                 No scheduled active medications logged on your profile today.
               </span>
             ) : (
               availableMeds.map((m) => (
                 <span
                   key={m.id}
-                  className="badge bg-primary/10 border border-primary/20 text-neutral text-xs font-semibold px-3 py-2.5 rounded-lg shadow-sm"
+                  className="badge bg-primary/10 border border-primary/20 text-base-content text-xs font-semibold px-3 py-2.5 rounded-lg shadow-sm"
                 >
                   💊 {m.name} ({m.dosage})
                 </span>
@@ -138,7 +138,7 @@ export default function NewReportForm() {
         </div>
         {/* Notes Log Message Fields */}
         <div className="form-control space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-widest text-neutral/60 block">
+          <label className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
             Daily Notes & Observations (Message)
           </label>
           <textarea
@@ -198,10 +198,10 @@ export default function NewReportForm() {
             >
               {/* Metric Label and Active Selection Badge */}
               <div className="flex justify-between items-center">
-                <span className="font-bold text-xs uppercase tracking-widest text-neutral/70">
+                <span className="font-bold text-xs uppercase tracking-widest text-base-content/70">
                   {item.label}
                 </span>
-                <span className="text-neutral font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
+                <span className="text-base-content font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
                   Score: {item.state}
                 </span>
               </div>
@@ -213,7 +213,7 @@ export default function NewReportForm() {
 
                   // Unselected fallback look and feel classes
                   let activeStyles =
-                    "bg-base-200/40 text-neutral/50 border-base-200/20 hover:bg-base-200 hover:text-neutral hover:border-base-300";
+                    "bg-base-200/40 text-base-content/50 border-base-200/20 hover:bg-base-200 hover:text-base-content hover:border-base-300";
 
                   // Apply static, unpurgeable classes explicitly when selected
                   if (isSelected) {
@@ -264,7 +264,7 @@ export default function NewReportForm() {
               </div>
 
               {/* Contextual Boundary Anchors Text Help Line */}
-              <div className="flex justify-between text-[10px] font-bold text-neutral/40 px-1 uppercase tracking-wider select-none">
+              <div className="flex justify-between text-[10px] font-bold text-base-content/40 px-1 uppercase tracking-wider select-none">
                 <span>{item.left}</span>
                 <span>{item.right}</span>
               </div>

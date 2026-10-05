@@ -45,7 +45,7 @@ export default function MedicationList() {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center p-4 space-y-3">
         <span className="loading loading-spinner loading-md text-primary"></span>
-        <p className="text-sm font-medium text-neutral/50 tracking-wide">
+        <p className="text-sm font-medium text-base-content/50 tracking-wide">
           Verifying user session security...
         </p>
       </div>
@@ -80,7 +80,7 @@ export default function MedicationList() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-12 space-y-3">
             <span className="loading loading-spinner loading-md text-primary"></span>
-            <p className="text-sm font-medium text-neutral/50 tracking-wide">
+            <p className="text-sm font-medium text-base-content/50 tracking-wide">
               Retrieving medication registry records...
             </p>
           </div>
@@ -91,10 +91,10 @@ export default function MedicationList() {
           <div className="flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed border-base-300 rounded-2xl bg-base-200/20 text-center space-y-4">
             <div className="text-4xl select-none opacity-40">📋</div>
             <div className="space-y-1">
-              <h3 className="font-bold text-base text-neutral tracking-wide">
+              <h3 className="font-bold text-base text-base-content tracking-wide">
                 No Medications Registered
               </h3>
-              <p className="text-xs sm:text-sm text-neutral/60 max-w-sm font-medium">
+              <p className="text-xs sm:text-sm text-base-content/60 max-w-sm font-medium">
                 Your current schedule tracker is empty. Click the "+" button in
                 the header above to log your first treatment asset.
               </p>
@@ -124,7 +124,7 @@ export default function MedicationList() {
                 <div className="flex items-center gap-4 w-full max-w-xl">
                   <button
                     onClick={() => toggleExpand(med.id)}
-                    className={`btn btn-ghost btn-xs btn-circle bg-base-200/60 hover:bg-base-200 transition-all duration-300 text-neutral font-bold ${
+                    className={`btn btn-ghost btn-xs btn-circle bg-base-200/60 hover:bg-base-200 transition-all duration-300 text-base-content font-bold ${
                       med.isExpanded ? "rotate-180" : "rotate-90"
                     }`}
                   >
@@ -139,12 +139,12 @@ export default function MedicationList() {
                         handleInputChange(med.id, "name", e.target.value)
                       }
                       placeholder="Medication Name"
-                      className="input input-sm h-10 rounded-xl w-full font-bold focus:outline-primary text-neutral bg-base-100 border border-base-200 px-4 shadow-inner"
+                      className="input input-sm h-10 rounded-xl w-full font-bold focus:outline-primary text-base-content bg-base-100 border border-base-200 px-4 shadow-inner"
                     />
                   ) : (
                     <span
                       onClick={() => toggleExpand(med.id)}
-                      className="font-bold text-base text-neutral tracking-wide cursor-pointer hover:text-primary transition-colors select-none duration-200"
+                      className="font-bold text-base text-base-content tracking-wide cursor-pointer hover:text-primary transition-colors select-none duration-200"
                     >
                       {med.name}
                     </span>
@@ -152,7 +152,7 @@ export default function MedicationList() {
                 </div>
 
                 {!med.isExpanded && (
-                  <span className="badge bg-accent text-neutral font-semibold tracking-wide border-none rounded-lg px-3 py-2.5 text-xs">
+                  <span className="badge bg-accent text-base-content font-semibold tracking-wide border-none rounded-lg px-3 py-2.5 text-xs">
                     {med.dosage || "No Dose"}
                   </span>
                 )}
@@ -165,7 +165,7 @@ export default function MedicationList() {
                     {/* Dosage Field */}
                     <div className="form-control w-full md:col-span-1">
                       <label className="label pt-0 pb-1.5">
-                        <span className="label-text font-bold text-xs uppercase tracking-widest text-neutral/65">
+                        <span className="label-text font-bold text-xs uppercase tracking-widest text-base-content/65">
                           Dosage
                         </span>
                       </label>
@@ -177,10 +177,10 @@ export default function MedicationList() {
                             handleInputChange(med.id, "dosage", e.target.value)
                           }
                           placeholder="e.g. 20 mg"
-                          className="input rounded-xl w-full bg-base-100 focus:outline-primary text-sm text-neutral border border-base-200 h-10 px-3 shadow-inner"
+                          className="input rounded-xl w-full bg-base-100 focus:outline-primary text-sm text-base-content border border-base-200 h-10 px-3 shadow-inner"
                         />
                       ) : (
-                        <div className="h-10 flex items-center px-4 bg-base-200/40 border border-base-200 rounded-xl font-bold text-neutral/80 text-sm">
+                        <div className="h-10 flex items-center px-4 bg-base-200/40 border border-base-200 rounded-xl font-bold text-base-content/80 text-sm">
                           {med.dosage || (
                             <span className="italic font-normal opacity-40">
                               Not defined
@@ -193,7 +193,7 @@ export default function MedicationList() {
                     {/* Planned Effect Field */}
                     <div className="form-control w-full md:col-span-2">
                       <label className="label pt-0 pb-1.5">
-                        <span className="label-text font-bold text-xs uppercase tracking-widest text-neutral/65">
+                        <span className="label-text font-bold text-xs uppercase tracking-widest text-base-content/65">
                           Planned Medical Effect
                         </span>
                       </label>
@@ -205,10 +205,10 @@ export default function MedicationList() {
                             handleInputChange(med.id, "effect", e.target.value)
                           }
                           placeholder="e.g. Mood stabilization"
-                          className="input rounded-xl w-full bg-base-100 focus:outline-primary text-sm text-neutral border border-base-200 h-10 px-3 shadow-inner"
+                          className="input rounded-xl w-full bg-base-100 focus:outline-primary text-sm text-base-content border border-base-200 h-10 px-3 shadow-inner"
                         />
                       ) : (
-                        <div className="h-10 flex items-center px-4 bg-base-200/40 border border-base-200 rounded-xl font-medium text-neutral/80 text-sm">
+                        <div className="h-10 flex items-center px-4 bg-base-200/40 border border-base-200 rounded-xl font-medium text-base-content/80 text-sm">
                           {med.effect || (
                             <span className="italic opacity-40 font-normal">
                               No target effect specified
@@ -222,7 +222,7 @@ export default function MedicationList() {
                   {/* Active Intake Slots Container */}
                   <div className="form-control bg-base-200/30 p-5 rounded-2xl border border-base-200 shadow-inner">
                     <label className="label pt-0 pb-3">
-                      <span className="label-text font-bold text-xs uppercase tracking-widest text-neutral/70">
+                      <span className="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">
                         {med.isEditing
                           ? "Schedule Configuration (Select Active Slots)"
                           : "Active Intake Slots"}
@@ -242,7 +242,7 @@ export default function MedicationList() {
                               med.isEditing
                                 ? "cursor-pointer"
                                 : "pointer-events-none"
-                            } ${isActive ? "text-neutral" : "text-neutral/40"}`}
+                            } ${isActive ? "text-base-content" : "text-base-content/40"}`}
                           >
                             <input
                               type="checkbox"
@@ -267,14 +267,14 @@ export default function MedicationList() {
                       className={`btn btn-sm rounded-xl px-5 font-bold tracking-wider cursor-pointer shadow-sm border ${
                         med.isEditing
                           ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
-                          : "bg-base-200 text-neutral border-base-300 hover:bg-base-300"
+                          : "bg-base-200 text-base-content border-base-300 hover:bg-base-300"
                       }`}
                     >
                       {med.isEditing ? "SAVE" : "EDIT"}
                     </button>
                     <button
                       onClick={() => deleteMedication(med.id)}
-                      className="btn btn-sm btn-ghost text-rose-600 font-bold tracking-wider hover:bg-rose-50 rounded-xl px-4 cursor-pointer"
+                      className="btn btn-sm btn-ghost text-error font-bold tracking-wider hover:bg-error/10 rounded-xl px-4 cursor-pointer"
                     >
                       DELETE
                     </button>

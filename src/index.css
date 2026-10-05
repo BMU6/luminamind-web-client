@@ -1,9 +1,3 @@
-/* @import "tailwindcss";
-@plugin "daisyui"; */
-
-/* @import "tailwindcss";
-@plugin "daisyui"; */
-
 @import "tailwindcss";
 
 /* Disable stock daisyUI themes to use your custom variables */
@@ -11,7 +5,7 @@
   themes: false;
 }
 
-/* Register your premium, custom clinical theme configuration */
+/* Light theme (default) */
 @plugin "daisyui/theme" {
   name: "psych-tracker";
   default: true;
@@ -28,12 +22,28 @@
 
   /* Deep Teal color */
   --color-neutral: #0f4950;
-  /* --color-neutral: #386653; */
-  /* --color-neutral: #b2dfdb; */
 
   /* Clinical surface base colors (Anti-pale crisp white surfaces) */
   --color-base-100: #ffffff;
   --color-base-200: #f4f7f6; /* Clinical Fog background tint */
+}
+
+/* Dark theme, used automatically when the system is set to dark */
+@plugin "daisyui/theme" {
+  name: "psych-tracker-dark";
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-primary: #26a69a;
+  --color-secondary: #00bcd4;
+  --color-accent: #2f6f69;
+  --color-neutral: #0f4950; /* stays teal: used for the page toolbars */
+
+  /* Surfaces: card, page, deepest */
+  --color-base-100: #13232b;
+  --color-base-200: #0d1a20;
+  --color-base-300: #081217;
+  --color-base-content: #e3f1ef;
 }
 
 /* Custom utility overrides */
@@ -58,4 +68,11 @@
 
 .link:hover {
   color: #00bcd4;
+}
+
+/* The deep teal link colour is too dark on dark surfaces */
+@media (prefers-color-scheme: dark) {
+  .link {
+    color: #4dd0c4;
+  }
 }

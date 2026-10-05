@@ -40,7 +40,7 @@ export default function ReportDetails() {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center space-y-4">
         <div className="text-3xl select-none">⚠️</div>
-        <p className="text-sm font-semibold text-neutral/50 tracking-wide">
+        <p className="text-sm font-semibold text-base-content/50 tracking-wide">
           Progress report details could not be found.
         </p>
         <button
@@ -81,19 +81,19 @@ export default function ReportDetails() {
 
       {/* Prescription Snapshot View */}
       <div className="bg-base-200/40 p-4 rounded-xl border border-base-200 space-y-2">
-        <span className="text-xs font-bold uppercase tracking-widest text-neutral/60 block">
+        <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
           Prescription Snapshot on Log Date
         </span>
         <div className="flex flex-wrap gap-2">
           {snapshotMeds.length === 0 ? (
-            <span className="text-xs text-neutral/40 italic">
+            <span className="text-xs text-base-content/40 italic">
               No active medications recorded on this timeline calendar block.
             </span>
           ) : (
             snapshotMeds.map((m: any, idx: number) => (
               <span
                 key={m.medicationId || idx}
-                className="badge bg-neutral/5 border border-neutral/10 text-neutral/80 text-xs font-semibold px-3 py-2.5 rounded-lg shadow-sm"
+                className="badge bg-base-content/5 border border-base-content/10 text-base-content/80 text-xs font-semibold px-3 py-2.5 rounded-lg shadow-sm"
               >
                 💊 {m.name} ({m.dosage})
               </span>
@@ -104,10 +104,10 @@ export default function ReportDetails() {
 
       {/* Clinical Notes Summary Observation Output Context Card */}
       <div className="space-y-2">
-        <span className="text-xs font-bold uppercase tracking-widest text-neutral/60 block">
+        <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
           Patient Observation Notes (Message)
         </span>
-        <div className="p-4 bg-base-200/40 border border-base-200 rounded-xl text-sm text-neutral/80 min-h-20 font-medium leading-relaxed shadow-inner">
+        <div className="p-4 bg-base-200/40 border border-base-200 rounded-xl text-sm text-base-content/80 min-h-20 font-medium leading-relaxed shadow-inner">
           {report.message || (
             <span className="italic opacity-40 font-normal">
               No custom observations or side-effect descriptions were logged on
@@ -161,10 +161,10 @@ export default function ReportDetails() {
             >
               {/* Metric Label and Active Selection Badge Header Row */}
               <div className="flex justify-between items-center px-1">
-                <span className="font-bold text-xs uppercase tracking-widest text-neutral/70">
+                <span className="font-bold text-xs uppercase tracking-widest text-base-content/70">
                   {item.label}
                 </span>
-                <span className="text-neutral font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
+                <span className="text-base-content font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
                   Score: {scoreValue}
                 </span>
               </div>
@@ -177,7 +177,7 @@ export default function ReportDetails() {
 
                     // Default non-selected cells setup appearance layout styles
                     let activeStyles =
-                      "bg-base-200/30 text-neutral/40 font-medium";
+                      "bg-base-200/30 text-base-content/40 font-medium";
 
                     if (isSelected) {
                       if (item.label === "Irritability") {
@@ -216,7 +216,7 @@ export default function ReportDetails() {
                 </div>
 
                 {/* Under-Grid Anchor Labels Row */}
-                <div className="flex justify-between items-center px-2 text-[10px] uppercase font-bold tracking-wider text-neutral/40">
+                <div className="flex justify-between items-center px-2 text-[10px] uppercase font-bold tracking-wider text-base-content/40">
                   <span>{item.left}</span>
                   <span>{item.right}</span>
                 </div>

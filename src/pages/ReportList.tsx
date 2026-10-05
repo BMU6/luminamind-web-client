@@ -30,7 +30,7 @@ export default function ReportList() {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center p-4">
         <span className="loading loading-spinner loading-md text-primary"></span>
-        <p className="ml-3 text-sm font-medium text-neutral/50">
+        <p className="ml-3 text-sm font-medium text-base-content/50">
           Verifying session...
         </p>
       </div>
@@ -52,7 +52,7 @@ export default function ReportList() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-12">
             <span className="loading loading-spinner loading-md text-primary mb-3"></span>
-            <p className="text-sm font-medium text-neutral/50">
+            <p className="text-sm font-medium text-base-content/50">
               Loading historical trend entries...
             </p>
           </div>
@@ -61,10 +61,10 @@ export default function ReportList() {
         {!loading && reports.length === 0 && (
           <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-base-300 rounded-2xl text-center space-y-3">
             <div className="text-4xl opacity-40">📋</div>
-            <h3 className="font-bold text-neutral">
+            <h3 className="font-bold text-base-content">
               No Progress Reports Found
             </h3>
-            <p className="text-xs text-neutral/50 max-w-xs font-medium">
+            <p className="text-xs text-base-content/50 max-w-xs font-medium">
               Click the button above to log today's initial clinical tracking
               metrics.
             </p>
@@ -102,26 +102,26 @@ export default function ReportList() {
               >
                 <div className="space-y-1">
                   {/* Updated Header Title combining Date @ Time */}
-                  <h4 className="font-bold text-base text-neutral tracking-wide">
+                  <h4 className="font-bold text-base text-base-content tracking-wide">
                     {displayDate}{" "}
-                    <span className="text-neutral/40 font-medium text-sm ml-1">
+                    <span className="text-base-content/40 font-medium text-sm ml-1">
                       @ {displayTime}
                     </span>
                   </h4>
-                  <p className="text-xs text-neutral/50 line-clamp-1 max-w-md font-medium">
+                  <p className="text-xs text-base-content/50 line-clamp-1 max-w-md font-medium">
                     {rep.message ||
                       "No logging notes submitted on this day entry."}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="badge bg-primary/5 border-none rounded text-xs font-bold p-2.5 text-neutral/80">
+                  <span className="badge bg-primary/5 border-none rounded text-xs font-bold p-2.5 text-base-content/80">
                     Mood: {rep.mood ?? 0}
                   </span>
-                  <span className="badge bg-primary/5 border-none rounded text-xs font-bold p-2.5 text-neutral/80">
+                  <span className="badge bg-primary/5 border-none rounded text-xs font-bold p-2.5 text-base-content/80">
                     Irritability: {rep.irritability ?? 0}
                   </span>
-                  <span className="text-neutral/30 font-bold ml-2">➔</span>
+                  <span className="text-base-content/30 font-bold ml-2">➔</span>
                 </div>
               </div>
             );
