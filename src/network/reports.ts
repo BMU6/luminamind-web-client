@@ -29,3 +29,18 @@ export const fetchReports = async (from: Date, to: Date): Promise<ApiReport[]> =
   }
   return (await res.json()) as ApiReport[];
 };
+
+// AI summary of the reports of the logged-in user in the same kind of time range
+export const fetchSummary = async (from: Date, to: Date): Promise<string> => {
+  const res = await fetch(`${VITE_API_URL}/home/summary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAccessToken()}` },
+    body: JSON.stringify({ from: from.toISOString(), to: to.toISOString() }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData?.error ?? 'Could not create the summary.');
+  }
+  const { summary } = (await res.json()) as { summary: string };
+  return summary;
+};
