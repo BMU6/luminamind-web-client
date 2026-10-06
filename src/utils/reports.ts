@@ -13,7 +13,7 @@ export function useReports(userId: string) {
       try {
         setLoading(true);
         const response = await fetch(
-          `http://localhost:3000/reports?userId=${userId}`,
+          `http://localhost:3000/reports`,
         );
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -44,8 +44,7 @@ export function useReports(userId: string) {
   // 2. Add an empty report template container at the top of the list row safely
   const addReport = async () => {
     const newReportTemplate = {
-      id: "temp_" + Date.now(),
-      userId,
+      id: "temp_" + Date.now(),
       date: new Date().toISOString(),
       mood: 3, // Neutral default baseline
       irritability: 0, // Clear numeric default (never undefined!)

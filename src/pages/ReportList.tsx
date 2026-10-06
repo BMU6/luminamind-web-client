@@ -20,7 +20,7 @@ export default function ReportList() {
 
   useEffect(() => {
     if (!userId) return;
-    fetch(`http://localhost:3000/medicationlist?userId=${userId}`)
+    fetch(`http://localhost:3000/medicationlist`)
       .then((res) => res.json())
       .then((data) => setAvailableMeds(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Error pre-loading medications:", err));
