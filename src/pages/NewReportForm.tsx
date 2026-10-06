@@ -27,7 +27,7 @@ export default function NewReportForm() {
   // 3. Auto-populate current treatments on mount
   useEffect(() => {
     if (!userId) return;
-    fetch(`http://localhost:3000/medicationlist?userId=${userId}`)
+    fetch(`http://localhost:3000/medicationlist`)
       .then((res) => res.json())
       .then((data) => setAvailableMeds(Array.isArray(data) ? data : []))
       .catch((err) =>
@@ -51,8 +51,7 @@ export default function NewReportForm() {
       const response = await fetch("http://localhost:3000/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
+        body: JSON.stringify({
           mood,
           irritability,
           energy,

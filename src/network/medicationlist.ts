@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MedicationListType } from "@/types/medicationType";
 
-// 1. Accept the active userId as an initialization argument
+// 1. The userId only tells us that the session is ready; the server takes the owner from the access token
 export function useMedications(userId: string) {
   const [medications, setMedications] = useState<MedicationListType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -14,9 +14,8 @@ export function useMedications(userId: string) {
     const fetchMedications = async () => {
       try {
         setLoading(true);
-        // Appends the userId to the query parameter string
         const response = await fetch(
-          `http://localhost:3000/medicationlist?userId=${userId}`,
+          `http://localhost:3000/medicationlist`,
         );
 
         if (!response.ok) {
@@ -49,7 +48,6 @@ export function useMedications(userId: string) {
   const addMedication = async () => {
     try {
       const templateMedication = {
-        userId, // <-- INJECT THE USER ID HERE
         name: "New Medication Entry",
         dosage: "0 mg",
         schedule: { morning: false, noon: false, evening: false, night: false },
@@ -78,7 +76,7 @@ export function useMedications(userId: string) {
     }
   };
 
-  // 4. Update fields via PUT (sending userId to pass backend Zod schemas)
+  // 4. Update fields via PUT
   const toggleEditMode = async (id: string) => {
     const currentMed = medications.find((m) => m.id === id);
 
@@ -90,7 +88,6 @@ export function useMedications(userId: string) {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              userId, // <-- INCLUDE IN SAVES TO PASS THE BACKEND VALIDATION
               name: currentMed.name,
               dosage: currentMed.dosage,
               schedule: currentMed.schedule,
