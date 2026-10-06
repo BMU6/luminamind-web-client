@@ -1,19 +1,13 @@
-/* @import "tailwindcss";
-@plugin "daisyui"; */
-
-/* @import "tailwindcss";
-@plugin "daisyui"; */
-
 @import "tailwindcss";
 
-/* Disable stock daisyUI themes to use your custom variables */
+/* Besides our own themes (below) we offer the two standard daisyUI themes */
 @plugin "daisyui" {
-  themes: false;
+  themes: light, dark;
 }
 
-/* Register your premium, custom clinical theme configuration */
+/* LuminaMind light theme (default when the system is light) */
 @plugin "daisyui/theme" {
-  name: "psych-tracker";
+  name: "luminamind-light";
   default: true;
   color-scheme: light;
 
@@ -28,12 +22,30 @@
 
   /* Deep Teal color */
   --color-neutral: #0f4950;
-  /* --color-neutral: #386653; */
-  /* --color-neutral: #b2dfdb; */
 
   /* Clinical surface base colors (Anti-pale crisp white surfaces) */
   --color-base-100: #ffffff;
   --color-base-200: #f4f7f6; /* Clinical Fog background tint */
+  /* Text colour. All "base-content/xx" classes (hover colours, borders, soft boxes) are made from it */
+  --color-base-content: #1a2b30;
+}
+
+/* LuminaMind dark theme (used when the system is dark) */
+@plugin "daisyui/theme" {
+  name: "luminamind-dark";
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-primary: #26a69a;
+  --color-secondary: #00bcd4;
+  --color-accent: #2f6f69;
+  --color-neutral: #0f4950; /* stays teal: used for the page toolbars */
+
+  /* Surfaces: card, page, deepest */
+  --color-base-100: #13232b;
+  --color-base-200: #0d1a20;
+  --color-base-300: #081217;
+  --color-base-content: #e3f1ef;
 }
 
 /* Custom utility overrides */
@@ -50,7 +62,8 @@
   font-weight: 600;
 }
 .link {
-  color: #0f4950;
+  /* deep teal on light themes, lighter teal on dark ones */
+  color: color-mix(in oklab, var(--color-base-content) 25%, var(--color-primary));
   text-decoration: none;
   font-weight: 600;
   font-size: 0.875rem;

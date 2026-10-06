@@ -13,9 +13,37 @@ import {
 import 'chartjs-adapter-date-fns';
 import { addDays, differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import { Line } from 'react-chartjs-2';
+import { PageCard, PageToolbar, ToolbarButton, ToolbarDivider } from '@/components';
 import { fetchReports, fetchSummary, type ApiReport } from '@/network';
 
 ChartJS.register(LinearScale, TimeScale, PointElement, LineElement, Tooltip, Legend);
+
+// Chart.js draws on a canvas, so it does not know about CSS. We read the theme colours here
+// and re-read them when the system (or a data-theme attribute) switches between light and dark.
+const readChartColors = () => {
+  const root = getComputedStyle(document.documentElement);
+  const text = root.getPropertyValue('--color-base-content').trim() || '#1f2937';
+  return {
+    text,
+    grid: `color-mix(in oklab, ${text} 15%, transparent)`,
+  };
+};
+
+const useChartColors = () => {
+  const [colors, setColors] = useState(readChartColors);
+  useEffect(() => {
+    const update = () => setColors(readChartColors());
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', update);
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      media.removeEventListener('change', update);
+      observer.disconnect();
+    };
+  }, []);
+  return colors;
+};
 
 type Orientation = 'horizontal' | 'vertical';
 
@@ -77,9 +105,6 @@ const fetchBlock = async (k: number): Promise<Report[]> => {
 const REPORT_LANE = -0.5;
 const REPORT_DATASET_INDEX = METRICS.length;
 
-// Inline style so square corners win over DaisyUI's theme radius, whatever the Tailwind version
-const SHARP = { borderRadius: 0 } as const;
-
 const formatDateTime = (t: number) =>
   new Date(t).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -111,6 +136,7 @@ const Home = () => {
   const wheelDistance = useRef(0);
 
   const vertical = orientation === 'vertical';
+  const chartColors = useChartColors();
 
   const rangeLabel = `${format(windowStart, 'dd.MM.')} – ${format(addDays(windowStart, WINDOW_DAYS - 1), 'dd.MM.yyyy')}`;
 
@@ -223,6 +249,8 @@ const Home = () => {
       // The visible window. Days without data simply stay empty.
       min: windowStart.getTime(),
       max: addDays(windowStart, WINDOW_DAYS).getTime(),
+      ticks: { color: chartColors.text },
+      grid: { color: chartColors.grid },
       time: {
         unit: 'day' as const,
         tooltipFormat: 'dd.MM.yyyy HH:mm',
@@ -234,7 +262,9 @@ const Home = () => {
       type: 'linear' as const,
       min: -1,
       max: 5,
+      grid: { color: chartColors.grid },
       ticks: {
+        color: chartColors.text,
         stepSize: 1,
         // hide the labels of the check-in lane (negative values)
         callback: (v: string | number) => (Number(v) >= 0 ? v : ''),
@@ -249,7 +279,7 @@ const Home = () => {
       interaction: { mode: 'nearest', intersect: true },
       scales: vertical ? { x: valueScale, y: timeScale } : { x: timeScale, y: valueScale },
       plugins: {
-        legend: { position: 'bottom', labels: { usePointStyle: true } },
+        legend: { position: 'bottom', labels: { usePointStyle: true, color: chartColors.text } },
         tooltip: {
           callbacks: {
             label: (ctx) => {
@@ -268,144 +298,115 @@ const Home = () => {
         if (report) setSelectedReport(report);
       },
     };
-  }, [vertical, windowStart, reports]);
+  }, [vertical, windowStart, reports, chartColors]);
 
   return (
-    <div className='grid grid-cols-1 lg:grid-cols-4 gap-4'>
-      <h1 className='text-2xl font-bold lg:col-span-4'>Welcome to LuminaMind</h1>
+    <PageCard size='lg'>
+      <PageToolbar
+        title='Home'
+        leading={
+          <>
+            <span className='text-sm font-semibold tracking-wide text-white/90'>{rangeLabel}</span>
+            {pending > 0 && <span className='loading loading-spinner loading-xs text-secondary' aria-label='Loading' />}
+          </>
+        }
+      >
+        <ToolbarButton onClick={() => shiftWindow(-WINDOW_DAYS)}>{vertical ? '↓' : '←'} Earlier</ToolbarButton>
+        <ToolbarButton onClick={() => setWindowStart(addDays(TODAY, -(WINDOW_DAYS - 1)))}>Today</ToolbarButton>
+        <ToolbarButton onClick={() => shiftWindow(WINDOW_DAYS)}>Later {vertical ? '↑' : '→'}</ToolbarButton>
+        <ToolbarDivider />
+        <ToolbarButton active={!vertical} onClick={() => setOrientation('horizontal')}>
+          Horizontal
+        </ToolbarButton>
+        <ToolbarButton active={vertical} onClick={() => setOrientation('vertical')}>
+          Vertical
+        </ToolbarButton>
+      </PageToolbar>
 
-      <section className='card bg-base-100 shadow lg:col-span-3' style={SHARP}>
-        <div className='card-body'>
-          {loadError && (
-            <div role='alert' className='alert alert-error' style={SHARP}>
-              {loadError}
+        {loadError && (
+          <div role='alert' className='alert alert-error rounded-2xl'>
+            {loadError}
+          </div>
+        )}
+
+        <main className='grid grid-cols-1 lg:grid-cols-4 gap-6'>
+          <section className='lg:col-span-3 border border-base-200 rounded-2xl p-5 space-y-4'>
+            {/* Chart.js needs a sized, relatively positioned parent when maintainAspectRatio is false */}
+            <div ref={chartBoxRef} className={`relative w-full ${vertical ? 'h-[70vh]' : 'h-80'}`}>
+              <Line key={orientation} data={data} options={options} />
             </div>
-          )}
 
-          <div className='flex flex-wrap items-center justify-between gap-2'>
-            <h2 className='card-title'>
-              {rangeLabel}
-              {pending > 0 && <span className='loading loading-spinner loading-xs' aria-label='Loading' />}
-            </h2>
-
-            <div className='flex flex-wrap items-center gap-2'>
-              <div className='join'>
-                <button type='button' className='btn btn-sm join-item' style={SHARP} onClick={() => shiftWindow(-WINDOW_DAYS)}>
-                  {vertical ? '↓' : '←'} Earlier
-                </button>
+            <div className='border-t border-base-200 pt-4 space-y-3'>
+              <div className='flex flex-wrap items-center gap-3'>
                 <button
                   type='button'
-                  className='btn btn-sm join-item'
-                  style={SHARP}
-                  onClick={() => setWindowStart(addDays(TODAY, -(WINDOW_DAYS - 1)))}
+                  className='btn btn-sm btn-primary rounded-xl font-bold tracking-wider px-4 text-white'
+                  onClick={handleSummarize}
+                  disabled={summaryLoading}
                 >
-                  Today
+                  {summaryLoading ? 'Summarizing…' : 'Summarize this week'}
                 </button>
-                <button type='button' className='btn btn-sm join-item' style={SHARP} onClick={() => shiftWindow(WINDOW_DAYS)}>
-                  Later {vertical ? '↑' : '→'}
-                </button>
+                {summaryLoading && <span className='loading loading-spinner loading-sm text-primary' aria-label='Loading' />}
+                <span className='text-xs font-medium text-base-content/50'>AI summary of {rangeLabel}</span>
               </div>
 
-              <div className='join'>
-                <button
-                  type='button'
-                  className={`btn btn-sm join-item ${!vertical ? 'btn-active' : ''}`}
-                  style={SHARP}
-                  onClick={() => setOrientation('horizontal')}
-                >
-                  Horizontal
-                </button>
-                <button
-                  type='button'
-                  className={`btn btn-sm join-item ${vertical ? 'btn-active' : ''}`}
-                  style={SHARP}
-                  onClick={() => setOrientation('vertical')}
-                >
-                  Vertical
-                </button>
-              </div>
+              {summaryError && (
+                <div role='alert' className='alert alert-error rounded-2xl'>
+                  {summaryError}
+                </div>
+              )}
+
+              {summary && (
+                <div className='bg-base-200/60 border border-base-200 rounded-2xl p-4'>
+                  <h3 className='font-bold text-sm text-base-content mb-2'>Summary {summary.range}</h3>
+                  <p className='whitespace-pre-line text-sm text-base-content/80 leading-relaxed'>{summary.text}</p>
+                  <p className='text-xs text-base-content/40 mt-3'>Generated by AI from your check-ins. Not a medical assessment.</p>
+                </div>
+              )}
             </div>
-          </div>
+          </section>
 
-          {/* Chart.js needs a sized, relatively positioned parent when maintainAspectRatio is false */}
-          <div ref={chartBoxRef} className={`relative w-full ${vertical ? 'h-[70vh]' : 'h-80'}`}>
-            <Line key={orientation} data={data} options={options} />
-          </div>
+          <aside className='lg:col-span-1 border border-base-200 rounded-2xl p-5 space-y-3'>
+            <h2 className='text-xs font-bold tracking-widest uppercase text-secondary'>Check-in</h2>
+            {selectedReport ? (
+              <>
+                <p className='text-xs font-medium text-base-content/50'>{formatDateTime(selectedReport.at)}</p>
+                <p className='text-sm text-base-content/80'>{selectedReport.message}</p>
 
-          <div className='divider my-1' />
-
-          <div className='flex flex-wrap items-center gap-3'>
-            <button
-              type='button'
-              className='btn btn-sm btn-primary'
-              style={SHARP}
-              onClick={handleSummarize}
-              disabled={summaryLoading}
-            >
-              {summaryLoading ? 'Summarizing…' : 'Summarize this week'}
-            </button>
-            {summaryLoading && <span className='loading loading-spinner loading-sm' aria-label='Loading' />}
-            <span className='text-sm opacity-70'>AI summary of {rangeLabel}</span>
-          </div>
-
-          {summaryError && (
-            <div role='alert' className='alert alert-error' style={SHARP}>
-              {summaryError}
-            </div>
-          )}
-
-          {summary && (
-            <div className='bg-base-200 p-4' style={SHARP}>
-              <h3 className='font-bold text-sm mb-2'>Summary {summary.range}</h3>
-              <p className='whitespace-pre-line text-sm'>{summary.text}</p>
-              <p className='text-xs opacity-60 mt-3'>Generated by AI from your check-ins. Not a medical assessment.</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <aside className='card bg-base-100 shadow lg:col-span-1' style={SHARP}>
-        <div className='card-body'>
-          <h2 className='card-title'>Check-in</h2>
-          {selectedReport ? (
-            <>
-              <p className='text-sm opacity-70'>{formatDateTime(selectedReport.at)}</p>
-              <p>{selectedReport.message}</p>
-
-              <ul className='text-sm'>
-                {METRICS.map((m) => (
-                  <li key={m.key} className='flex justify-between'>
-                    <span>{m.label}</span>
-                    <span className='font-bold'>{selectedReport[m.key]}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <h3 className='font-bold text-sm'>Medications</h3>
-              {selectedReport.medications.length === 0 ? (
-                <p className='text-sm opacity-70'>None</p>
-              ) : (
-                <ul className='text-sm'>
-                  {selectedReport.medications.map((m) => (
-                    <li key={m.id}>
-                      {m.name} – {m.dosage}
+                <ul className='text-sm space-y-1'>
+                  {METRICS.map((m) => (
+                    <li key={m.key} className='flex justify-between'>
+                      <span className='text-base-content/70'>{m.label}</span>
+                      <span className='badge bg-primary/5 border-none rounded text-xs font-bold p-2.5 text-base-content/80'>
+                        {selectedReport[m.key]}
+                      </span>
                     </li>
                   ))}
                 </ul>
-              )}
 
-              <div className='card-actions justify-end'>
-                <button type='button' className='btn btn-sm btn-ghost' style={SHARP} onClick={() => setSelectedReport(null)}>
+                <h3 className='font-bold text-sm text-base-content'>Medications</h3>
+                {selectedReport.medications.length === 0 ? (
+                  <p className='text-sm text-base-content/50'>None</p>
+                ) : (
+                  <ul className='text-sm text-base-content/80'>
+                    {selectedReport.medications.map((m) => (
+                      <li key={m.id}>
+                        {m.name} – {m.dosage}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <button type='button' className='btn btn-sm btn-ghost rounded-xl' onClick={() => setSelectedReport(null)}>
                   Close
                 </button>
-              </div>
-            </>
-          ) : (
-            <p className='opacity-70'>Click a point in the chart to read that check-in.</p>
-          )}
-        </div>
-      </aside>
-    </div>
+              </>
+            ) : (
+              <p className='text-sm text-base-content/50'>Click a point in the chart to read that check-in.</p>
+            )}
+          </aside>
+        </main>
+    </PageCard>
   );
 };
 

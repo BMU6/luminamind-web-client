@@ -30,7 +30,7 @@ const Navbar = () => {
       <div className="flex-none flex items-center">
         {user && <p>{`Welcome back, ${user.email}`}</p>}
         <ThemeSwitcher />
-        <ul className="menu menu-horizontal px-1 [&_a.active]:text-secondary! [&_li>*:not(.active):hover]:text-base-content/60 [&_li>*]:transition-colors">
+        <ul className="menu menu-horizontal px-1 [&_a.active]:text-secondary!">
           {!loading &&
             (signedIn ? (
               <>

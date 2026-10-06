@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const RootLayout = () => {
   return (
-    <div className='container mx-auto'>
+    <div>
       <ToastContainer position='bottom-left' autoClose={1500} theme='colored' />
       <Navbar />
       <Outlet />
