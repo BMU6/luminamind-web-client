@@ -6,6 +6,9 @@ import ThemeSwitcher from "./ThemeSwitcher";
 const Navbar = () => {
   const { handleSignOut, signedIn, loading, user } = useAuth();
 
+  const isPatient = user?.roles?.includes("patient");
+  const isDoctor = user?.roles?.includes("doctor");
+
   const handleLogout = async () => {
     try {
       await handleSignOut();
@@ -37,14 +40,37 @@ const Navbar = () => {
                 <li>
                   <NavLink to="/">Home</NavLink>
                 </li>
+                {/* NEW: Render tracking pathways exclusively for Patient profiles */}
+                {isPatient && (
+                  <>
+                    <li>
+                      <NavLink to="/reports">Reports</NavLink>
+                    </li>
+                    <li>
+                      <NavLink to="/medicationlist">Medication List</NavLink>
+                    </li>
+                  </>
+                )}
+
+                {/* NEW: Render management layout tools exclusively for Doctor profiles */}
+                {isDoctor && (
+                  <li>
+                    <NavLink to="/doctor/dashboard">Dashboard</NavLink>
+                  </li>
+                )}
+
+                {/* NEW: Shared interactive Chat channel unlocked for both roles */}
                 <li>
-                  <NavLink to="/reports">Reports</NavLink>
+                  <NavLink to="/chat">Messages</NavLink>
                 </li>
+
                 <li>
-                  <NavLink to="/medicationlist">Medication List</NavLink>
-                </li>
-                <li>
-                  <button onClick={handleLogout}>Logout</button>
+                  <button
+                    onClick={handleLogout}
+                    className="btn btn-ghost btn-sm font-bold text-error"
+                  >
+                    Logout
+                  </button>
                 </li>
               </>
             ) : (

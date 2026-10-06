@@ -1,16 +1,22 @@
-
-import type { RefObject } from 'react';
+import type { RefObject } from "react";
 export type DbEntry = {
   _id: string;
   createdAt: string;
   updatedAt?: string;
 };
 
-export type AttributeNames = 'mood' | 'energy' | 'sleep' | 'concentration' | 'irritability';
+export type AttributeNames =
+  | "mood"
+  | "energy"
+  | "sleep"
+  | "concentration"
+  | "irritability";
 
 export type User = DbEntry & {
   email: string;
   roles: string[];
+  connectedUsers?: string[];
+  id?: string;
 };
 
 export type LoginData = { email: string; password: string };
@@ -31,3 +37,19 @@ export type AuthContextType = {
 };
 
 export type ModalRef = RefObject<HTMLDialogElement | null>;
+// NEW: Maps the real-time chat payload structure coming over the network wire
+export interface ChatMessage {
+  _id: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  createdAt: string;
+}
+
+// NEW: Maps the localized channels directory listing elements type signature
+export interface Contact {
+  _id: string;
+  email: string;
+  roles: string[];
+  id?: string;
+}
