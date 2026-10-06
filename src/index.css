@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
-/* Disable stock daisyUI themes to use your custom variables */
+/* Besides our own themes (below) we offer the two standard daisyUI themes */
 @plugin "daisyui" {
-  themes: false;
+  themes: light, dark;
 }
 
-/* Light theme (default) */
+/* LuminaMind light theme (default when the system is light) */
 @plugin "daisyui/theme" {
-  name: "psych-tracker";
+  name: "luminamind-light";
   default: true;
   color-scheme: light;
 
@@ -26,11 +26,13 @@
   /* Clinical surface base colors (Anti-pale crisp white surfaces) */
   --color-base-100: #ffffff;
   --color-base-200: #f4f7f6; /* Clinical Fog background tint */
+  /* Text colour. All "base-content/xx" classes (hover colours, borders, soft boxes) are made from it */
+  --color-base-content: #1a2b30;
 }
 
-/* Dark theme, used automatically when the system is set to dark */
+/* LuminaMind dark theme (used when the system is dark) */
 @plugin "daisyui/theme" {
-  name: "psych-tracker-dark";
+  name: "luminamind-dark";
   prefersdark: true;
   color-scheme: dark;
 
@@ -60,7 +62,8 @@
   font-weight: 600;
 }
 .link {
-  color: #0f4950;
+  /* deep teal on light themes, lighter teal on dark ones */
+  color: color-mix(in oklab, var(--color-base-content) 25%, var(--color-primary));
   text-decoration: none;
   font-weight: 600;
   font-size: 0.875rem;
@@ -68,11 +71,4 @@
 
 .link:hover {
   color: #00bcd4;
-}
-
-/* The deep teal link colour is too dark on dark surfaces */
-@media (prefers-color-scheme: dark) {
-  .link {
-    color: #4dd0c4;
-  }
 }
