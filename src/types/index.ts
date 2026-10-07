@@ -25,6 +25,7 @@ export type RegisterData = {
   email: string;
   password: string;
   confirmPassword: string;
+  role: "patient" | "doctor";
 };
 
 export type AuthContextType = {
@@ -38,18 +39,18 @@ export type AuthContextType = {
 
 export type ModalRef = RefObject<HTMLDialogElement | null>;
 // NEW: Maps the real-time chat payload structure coming over the network wire
-export interface ChatMessage {
+export type ChatMessage = {
   _id: string;
   senderId: string;
   receiverId: string;
   text: string;
   createdAt: string;
-}
+};
 
 // NEW: Maps the localized channels directory listing elements type signature
-export interface Contact {
+export type Contact = {
   _id: string;
   email: string;
   roles: string[];
   id?: string;
-}
+};

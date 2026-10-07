@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
+import { toast } from "react-toastify";
 import { PageCard, PageToolbar, ToolbarButton } from "@/components";
 
 export default function ReportDetails() {
@@ -8,6 +9,12 @@ export default function ReportDetails() {
 
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Local state modifiers for edit/delete lifecycle phases
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [editForm, setEditForm] = useState<any>(null);
 
   // 1. Fetch single progress log summary asset from backend
   useEffect(() => {
@@ -21,14 +28,84 @@ export default function ReportDetails() {
           );
         return res.json();
       })
-      .then((data) => setReport(data))
+      .then((data) => {
+        setReport(data);
+        setEditForm(data); // Pre-populates the edit staging form state
+      })
       .catch((err) =>
         console.error("Details database retrieval exception:", err),
       )
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
+  // 2. DELETE LIFECYCLE ACTION HANDLER
+  const handleDeleteConfirmExecution = async () => {
+    if (!id) return;
+
+    try {
+      setShowDeleteConfirm(false);
+      setIsDeleting(true);
+      const res = await fetch(`http://localhost:3000/reports/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed dropping record.");
+      }
+
+      toast.success("Progress record deleted successfully.");
+      navigate("/reports");
+    } catch (err: unknown) {
+      const message = (err as Error).message;
+      toast.error(message || "An unexpected error occurred during removal.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // 3. EDIT FORM LIFECYCLE SUBMISSION HANDLER
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!id) return;
+
+    try {
+      setLoading(true);
+      const res = await fetch(`http://localhost:3000/reports/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: editForm.userId,
+          mood: editForm.mood,
+          concentration: editForm.concentration,
+          irritability: editForm.irritability,
+          energy: editForm.energy,
+          sleep: editForm.sleep,
+          message: editForm.message,
+          activeMedications: editForm.activeMedications,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed updating document.");
+      }
+
+      const updatedReport = await res.json();
+      setReport(updatedReport);
+      toast.success("Progress report updated successfully!");
+      setIsEditing(false);
+    } catch (err: unknown) {
+      const message = (err as Error).message;
+      toast.error(
+        message || "Validation failure during edit update execution.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && !isEditing) {
     return (
       <div className="min-h-screen bg-base-200 flex justify-center items-center">
         <span className="loading loading-spinner loading-md text-primary"></span>
@@ -52,7 +129,6 @@ export default function ReportDetails() {
       </div>
     );
   }
-
   const snapshotMeds = Array.isArray(report.activeMedications)
     ? report.activeMedications
     : [];
@@ -63,6 +139,41 @@ export default function ReportDetails() {
     day: "numeric",
     year: "numeric",
   });
+
+  const METRIC_CONFIGS = [
+    {
+      key: "mood",
+      label: "Mood Scale",
+      left: "Severe Low",
+      right: "Excellent",
+    },
+    {
+      key: "irritability",
+      label: "Irritability",
+      left: "Calm / None",
+      right: "Severe",
+    },
+    {
+      key: "energy",
+      label: "Energy Level",
+      left: "Fatigue",
+      right: "High Alert",
+    },
+    {
+      key: "sleep",
+      label: "Sleep Quality",
+      left: "Restless",
+      right: "Excellent Rest",
+    },
+    {
+      key: "concentration",
+      label: "Concentration",
+      left: "Brain Fog",
+      right: "Very Sharp",
+    },
+  ];
+
+  const SCALES = [0, 1, 2, 3, 4, 5];
 
   return (
     <PageCard>
@@ -103,7 +214,7 @@ export default function ReportDetails() {
       </div>
 
       {/* Clinical Notes Summary Observation Output Context Card */}
-      <div className="space-y-2">
+      <div className="space-y-2 mt-4">
         <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
           Patient Observation Notes (Message)
         </span>
@@ -118,39 +229,8 @@ export default function ReportDetails() {
       </div>
 
       {/* 5 Clinical Metric Segment Matrix */}
-      <div className="space-y-6">
-        {[
-          {
-            key: "mood",
-            label: "Mood Scale",
-            left: "Severe Low",
-            right: "Excellent",
-          },
-          {
-            key: "irritability",
-            label: "Irritability",
-            left: "Calm / None",
-            right: "Severe",
-          },
-          {
-            key: "energy",
-            label: "Energy Level",
-            left: "Fatigue",
-            right: "High Alert",
-          },
-          {
-            key: "sleep",
-            label: "Sleep Quality",
-            left: "Restless",
-            right: "Excellent Rest",
-          },
-          {
-            key: "concentration",
-            label: "Concentration",
-            left: "Brain Fog",
-            right: "Very Sharp",
-          },
-        ].map((item) => {
+      <div className="space-y-6 mt-4">
+        {METRIC_CONFIGS.map((item) => {
           const scoreValue =
             typeof report[item.key] === "number" ? report[item.key] : 0;
 
@@ -159,7 +239,6 @@ export default function ReportDetails() {
               key={item.key}
               className="p-6 border border-base-200/60 bg-base-100 rounded-3xl space-y-4 shadow-sm"
             >
-              {/* Metric Label and Active Selection Badge Header Row */}
               <div className="flex justify-between items-center px-1">
                 <span className="font-bold text-xs uppercase tracking-widest text-base-content/70">
                   {item.label}
@@ -169,13 +248,10 @@ export default function ReportDetails() {
                 </span>
               </div>
 
-              {/* Clean Segment Matrix Workspace */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between bg-base-200/10 rounded-2xl border border-base-200/40 p-1.5 gap-1 w-full">
-                  {[0, 1, 2, 3, 4, 5].map((val: number) => {
+                  {SCALES.map((val: number) => {
                     const isSelected = scoreValue === val;
-
-                    // Default non-selected cells setup appearance layout styles
                     let activeStyles =
                       "bg-base-200/30 text-base-content/40 font-medium";
 
@@ -199,7 +275,7 @@ export default function ReportDetails() {
                             "bg-amber-500 text-white font-black shadow-md scale-[1.02]";
                         else
                           activeStyles =
-                            "bg-emerald-600 text-white font-white font-black shadow-md scale-[1.02]";
+                            "bg-emerald-600 text-white font-black shadow-md scale-[1.02]";
                       }
                     }
 
@@ -215,7 +291,6 @@ export default function ReportDetails() {
                   })}
                 </div>
 
-                {/* Under-Grid Anchor Labels Row */}
                 <div className="flex justify-between items-center px-2 text-[10px] uppercase font-bold tracking-wider text-base-content/40">
                   <span>{item.left}</span>
                   <span>{item.right}</span>
@@ -225,6 +300,170 @@ export default function ReportDetails() {
           );
         })}
       </div>
+      {/* ACTION TOOLBAR FOOTER CONTROLS */}
+      <div className="flex gap-4 items-center justify-end mt-8 border-t border-base-content/10 pt-6">
+        <button
+          onClick={() => {
+            setEditForm({ ...report });
+            setIsEditing(true);
+          }}
+          className="btn btn-outline btn-primary rounded-xl px-6 font-bold flex items-center gap-2"
+          disabled={isDeleting}
+        >
+          ✏️ Edit Report
+        </button>
+
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className={`btn btn-error text-white rounded-xl px-6 font-bold flex items-center gap-2`}
+          disabled={isDeleting}
+        >
+          🗑️ Delete
+        </button>
+      </div>
+
+      {/* ACTION EDIT OVERLAY SCREEN MODAL PANEL */}
+      {isEditing && editForm && (
+        <div className="modal modal-open backdrop-blur-xs">
+          <div className="modal-box rounded-3xl bg-base-100 max-w-2xl border border-base-200 shadow-2xl p-6">
+            <h3 className="font-black text-xl mb-6 text-primary flex items-center gap-2">
+              📝 Edit Daily Progress Record
+            </h3>
+
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              <div className="form-control w-full space-y-1">
+                <label className="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">
+                  Observations & Symptoms Note
+                </label>
+                <textarea
+                  className="textarea textarea-bordered rounded-xl w-full bg-base-100 min-h-[100px] text-sm focus:textarea-primary"
+                  placeholder="Describe how you are feeling..."
+                  value={editForm.message ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, message: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {METRIC_CONFIGS.map((item) => {
+                  const currentStagedValue = editForm[item.key] ?? 0;
+
+                  return (
+                    <div
+                      key={item.key}
+                      className="space-y-2 border-b border-base-200 pb-4 last:border-0"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-xs uppercase tracking-widest text-base-content/70">
+                          {item.label}
+                        </span>
+                        <span className="badge badge-neutral rounded-lg px-2 py-1 text-xs font-bold">
+                          Selected: {currentStagedValue}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between bg-base-200/30 rounded-2xl p-1 gap-1 w-full">
+                        {SCALES.map((val: number) => {
+                          const isStaged = currentStagedValue === val;
+                          let activeStagedStyle =
+                            "bg-base-100 text-base-content/50 hover:bg-base-200/50 cursor-pointer";
+
+                          if (isStaged) {
+                            if (item.label === "Irritability") {
+                              if (val <= 1)
+                                activeStagedStyle =
+                                  "bg-emerald-600 text-white font-black shadow-md scale-105";
+                              else if (val <= 3)
+                                activeStagedStyle =
+                                  "bg-amber-500 text-white font-black shadow-md scale-105";
+                              else
+                                activeStagedStyle =
+                                  "bg-rose-600 text-white font-black shadow-md scale-105";
+                            } else {
+                              if (val <= 1)
+                                activeStagedStyle =
+                                  "bg-rose-600 text-white font-black shadow-md scale-105";
+                              else if (val <= 3)
+                                activeStagedStyle =
+                                  "bg-amber-500 text-white font-black shadow-md scale-105";
+                              else
+                                activeStagedStyle =
+                                  "bg-emerald-600 text-white font-black shadow-md scale-105";
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() =>
+                                setEditForm({ ...editForm, [item.key]: val })
+                              }
+                              className={`flex-1 text-center py-2.5 rounded-xl text-xs font-bold transition-all duration-150 ${activeStagedStyle}`}
+                            >
+                              {val}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="modal-action gap-2 border-t border-base-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="btn btn-ghost rounded-xl px-5 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary rounded-xl px-6 font-bold"
+                >
+                  Save Progress Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM DAISYUI MODAL DIALOG CONTAINER FOR DELETIONS */}
+      {showDeleteConfirm && (
+        <div className="modal modal-open backdrop-blur-xs">
+          <div className="modal-box rounded-3xl border border-base-200 shadow-2xl p-6 max-w-sm bg-base-100">
+            <div className="text-center space-y-3">
+              <div className="text-4xl">⚠️</div>
+              <h3 className="font-black text-xl text-error">
+                Permanently Delete?
+              </h3>
+              <p className="text-sm font-medium text-base-content/70 leading-relaxed">
+                This action is irreversible. Are you sure you want to drop this
+                daily progress record out of your tracking history?
+              </p>
+            </div>
+            <div className="modal-action justify-center gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="btn btn-ghost rounded-xl px-5 font-bold"
+              >
+                No, Keep It
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirmExecution}
+                className="btn btn-error text-white rounded-xl px-5 font-bold shadow-md"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageCard>
   );
 }
