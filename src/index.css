@@ -28,6 +28,16 @@
   --color-base-200: #f4f7f6; /* Clinical Fog background tint */
   /* Text colour. All "base-content/xx" classes (hover colours, borders, soft boxes) are made from it */
   --color-base-content: #1a2b30;
+
+  /* Status colours. Without them "text-error", "badge-error" and so on have no colour at all. */
+  --color-error: #d03a4f;
+  --color-error-content: #ffffff;
+  --color-success: #2e9e6f;
+  --color-success-content: #ffffff;
+  --color-warning: #e0a030;
+  --color-warning-content: #2b2008;
+  --color-info: #2b9bd1;
+  --color-info-content: #ffffff;
 }
 
 /* LuminaMind dark theme (used when the system is dark) */
@@ -46,6 +56,16 @@
   --color-base-200: #0d1a20;
   --color-base-300: #081217;
   --color-base-content: #e3f1ef;
+
+  /* Status colours (slightly lighter than in the light theme) */
+  --color-error: #e5566b;
+  --color-error-content: #ffffff;
+  --color-success: #3fb988;
+  --color-success-content: #06241a;
+  --color-warning: #e8b04a;
+  --color-warning-content: #2b2008;
+  --color-info: #4aaee0;
+  --color-info-content: #06202c;
 }
 
 /* Custom utility overrides */

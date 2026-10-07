@@ -3,6 +3,7 @@ import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
 import { toast } from "react-toastify";
+import { PageCard, PageToolbar } from "@/components";
 
 interface ConnectedPatient {
   id: string;
@@ -96,13 +97,24 @@ export default function DoctorDashboard() {
   };
 
   return (
-    <div className="min-h-[88vh] bg-base-200/50 p-4 sm:p-8 font-sans text-neutral antialiased">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+    <PageCard size="lg">
+      <PageToolbar
+        title="Doctor Dashboard"
+        leading={
+          !loadingPatients && (
+            <span className="text-xs sm:text-sm font-semibold text-white/60">
+              {patients.length} {patients.length === 1 ? "patient" : "patients"}
+            </span>
+          )
+        }
+      />
+
+      <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* LEFT COLUMN: Patient Directory Grid & Handshake Box */}
         <div className="md:col-span-1 flex flex-col gap-6">
           {/* Patient Selection Directory */}
-          <div className="bg-base-100 border border-base-200/60 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
-            <h2 className="text-sm font-black uppercase tracking-wider opacity-70 border-b border-base-200 pb-2">
+          <div className="border border-base-content/10 rounded-2xl p-5 flex flex-col gap-4">
+            <h2 className="text-sm font-black uppercase tracking-wider text-base-content/70 border-b border-base-content/10 pb-2">
               Patient Workspace Directory
             </h2>
 
@@ -111,7 +123,7 @@ export default function DoctorDashboard() {
                 <span className="loading loading-spinner text-primary loading-sm"></span>
               </div>
             ) : patients.length === 0 ? (
-              <p className="text-xs text-neutral/50 italic text-center py-4">
+              <p className="text-xs text-base-content/50 italic text-center py-4">
                 No patients linked to your account index.
               </p>
             ) : (
@@ -122,13 +134,13 @@ export default function DoctorDashboard() {
                     onClick={() => handleSelectPatient(pat)}
                     className={`p-3 border rounded-xl cursor-pointer transition-all flex justify-between items-center select-none ${
                       selectedPatient?.id === pat.id
-                        ? "border-primary bg-primary/5 shadow-xs font-bold"
-                        : "border-base-200 bg-base-100 hover:border-primary/40"
+                        ? "border-primary bg-primary/5 font-bold"
+                        : "border-base-content/10 bg-base-100 hover:border-primary/40"
                     }`}
                   >
                     <div className="truncate pr-2">
                       <p className="text-xs truncate">{pat.email}</p>
-                      <p className="text-[9px] opacity-40 font-mono truncate">
+                      <p className="text-[9px] text-base-content/40 font-mono truncate">
                         ID: {pat.id.substring(0, 8)}...
                       </p>
                     </div>
@@ -144,16 +156,16 @@ export default function DoctorDashboard() {
           </div>
 
           {/* Secure Relationship Invitation Handshake Module */}
-          <div className="bg-base-100 border border-base-200/60 rounded-2xl p-5 shadow-xs flex flex-col gap-3">
-            <h3 className="font-bold text-xs uppercase tracking-wider opacity-70">
+          <div className="border border-base-content/10 rounded-2xl p-5 flex flex-col gap-3">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-base-content/70">
               Connect New Patient
             </h3>
-            <p className="text-[11px] opacity-50 leading-relaxed font-medium">
+            <p className="text-[11px] text-base-content/50 leading-relaxed font-medium">
               Generate a temporary, secure 6-character token code to hand over
               to your patient during onboarding.
             </p>
             {inviteCode && (
-              <div className="bg-base-200/60 text-center py-2.5 rounded-xl border border-base-200/80 font-mono text-xl font-black tracking-widest text-primary animate-pulse">
+              <div className="bg-base-content/5 text-center py-2.5 rounded-xl border border-base-content/10 font-mono text-xl font-black tracking-widest text-primary animate-pulse">
                 {inviteCode}
               </div>
             )}
@@ -172,21 +184,21 @@ export default function DoctorDashboard() {
         </div>
 
         {/* RIGHT COLUMN: Patient Summary and Chart Workspace Panel */}
-        <div className="md:col-span-2 bg-base-100 border border-base-200/60 rounded-2xl p-6 shadow-xs flex flex-col gap-6 min-h-[60vh]">
+        <div className="md:col-span-2 border border-base-content/10 rounded-2xl p-6 flex flex-col gap-6 min-h-[60vh]">
           {selectedPatient ? (
             <>
-              <header className="border-b border-base-200 pb-3 flex justify-between items-center">
+              <header className="border-b border-base-content/10 pb-3 flex flex-wrap gap-2 justify-between items-center">
                 <h3 className="text-base font-black tracking-tight">
                   Clinical Timeline Analysis View
                 </h3>
-                <span className="text-[10px] font-mono bg-base-200 px-3 py-1 rounded-lg truncate max-w-xs">
+                <span className="text-[10px] font-mono bg-base-content/10 px-3 py-1 rounded-lg truncate max-w-xs">
                   Active: {selectedPatient.email}
                 </span>
               </header>
 
               {/* Local Privacy AI Engine Context Output Container */}
-              <div className="bg-base-200/40 border border-base-200 rounded-xl p-4 space-y-2 shadow-inner">
-                <div className="flex items-center gap-1.5 opacity-60">
+              <div className="bg-base-content/5 border border-base-content/10 rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-1.5 text-base-content/60">
                   <span className="text-base">🦙</span>
                   <span className="text-[9px] font-bold uppercase tracking-widest">
                     Ollama Local Clinical Insights (Llama 3.1:8b)
@@ -194,14 +206,14 @@ export default function DoctorDashboard() {
                 </div>
 
                 {loadingSummary ? (
-                  <div className="py-2 flex items-center gap-2 text-xs opacity-50 italic">
+                  <div className="py-2 flex items-center gap-2 text-xs text-base-content/50 italic">
                     <span className="loading loading-dots loading-xs"></span>
                     <span>
                       Compiling context metrics history fully offline...
                     </span>
                   </div>
                 ) : (
-                  <p className="text-xs text-neutral/80 leading-relaxed font-medium pl-1">
+                  <p className="text-xs text-base-content/80 leading-relaxed font-medium pl-1">
                     {aiSummary ||
                       "No background logs analysis tracked yet for this active workspace."}
                   </p>
@@ -209,12 +221,12 @@ export default function DoctorDashboard() {
               </div>
 
               {/* Chart Canvas Engine Box Canvas Placeholder */}
-              <div className="flex-1 border border-dashed border-base-300 rounded-xl flex flex-col items-center justify-center bg-base-200/10 text-center p-6 min-h-[250px]">
+              <div className="flex-1 border border-dashed border-base-content/20 rounded-xl flex flex-col items-center justify-center bg-base-content/5 text-center p-6 min-h-[250px]">
                 <span className="text-xl opacity-40 mb-1">📈</span>
-                <h4 className="font-bold text-xs text-neutral/60 mb-1">
+                <h4 className="font-bold text-xs text-base-content/60 mb-1">
                   Longitudinal Visual Matrix
                 </h4>
-                <p className="text-[10px] text-neutral/40 font-semibold max-w-xs leading-normal">
+                <p className="text-[10px] text-base-content/40 font-semibold max-w-xs leading-normal">
                   Your teammate's chart engine configuration can easily layer
                   inside this space to display interactive slider records (0–5
                   values) against medication updates.
@@ -222,7 +234,7 @@ export default function DoctorDashboard() {
               </div>
             </>
           ) : (
-            <div className="m-auto text-center space-y-2.5 opacity-30 select-none py-16">
+            <div className="m-auto text-center space-y-2.5 text-base-content/40 select-none py-16">
               <div className="text-4xl">📋</div>
               <h3 className="font-bold text-sm tracking-wide uppercase">
                 No Patient Profile Opened
@@ -234,7 +246,7 @@ export default function DoctorDashboard() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </main>
+    </PageCard>
   );
 }
