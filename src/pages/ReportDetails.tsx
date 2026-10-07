@@ -310,15 +310,15 @@ export default function ReportDetails() {
           className="btn btn-outline btn-primary rounded-xl px-6 font-bold flex items-center gap-2"
           disabled={isDeleting}
         >
-          ✏️ Edit Report
+          Edit Report
         </button>
 
         <button
           onClick={() => setShowDeleteConfirm(true)}
-          className={`btn btn-error text-white rounded-xl px-6 font-bold flex items-center gap-2`}
+          className={`btn btn-error  rounded-xl px-6 font-bold flex items-center gap-2`}
           disabled={isDeleting}
         >
-          🗑️ Delete
+          Delete
         </button>
       </div>
 
@@ -449,14 +449,14 @@ export default function ReportDetails() {
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="btn btn-ghost rounded-xl px-5 font-bold"
+                className="btn btn-primary rounded-xl px-5 font-bold"
               >
                 No, Keep It
               </button>
               <button
                 type="button"
                 onClick={handleDeleteConfirmExecution}
-                className="btn btn-error text-white rounded-xl px-5 font-bold shadow-md"
+                className="btn btn-error  rounded-xl px-5 font-bold shadow-md"
               >
                 Yes, Delete
               </button>
