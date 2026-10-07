@@ -37,12 +37,12 @@ const Navbar = () => {
           {!loading &&
             (signedIn ? (
               <>
-                <li>
-                  <NavLink to="/">Home</NavLink>
-                </li>
                 {/* NEW: Render tracking pathways exclusively for Patient profiles */}
                 {isPatient && (
                   <>
+                    <li>
+                      <NavLink to="/">Home</NavLink>
+                    </li>
                     <li>
                       <NavLink to="/reports">Reports</NavLink>
                     </li>
