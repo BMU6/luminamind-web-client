@@ -474,6 +474,14 @@ const Home = () => {
         </section>
 
         <aside className="lg:col-span-1 border border-base-200 rounded-2xl p-5 space-y-3">
+          {user?.roles?.includes("patient") && (
+            <>
+              {/* NEW IMPLEMENTATION A: Secure Invitation Code Handshake Widget */}
+              <div className="border-b border-base-200 pb-4">
+                <PatientLinkHandshakeWidget />
+              </div>
+            </>
+          )}
           <h2 className="text-xs font-bold tracking-widest uppercase text-secondary">
             Check-in
           </h2>
