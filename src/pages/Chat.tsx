@@ -3,10 +3,13 @@ import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import type { ChatMessage, Contact } from "@/types";
 
 export default function Chat() {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation(); // Pulls translation dictionary strings and active locale settings
+
   const currentUserId = user?._id || user?.id || "";
   const isDoctor = user?.roles?.includes("doctor");
 
@@ -21,8 +24,6 @@ export default function Chat() {
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // 1. Fetch available connected contact index cards on initialization mount
-  // Locate the first useEffect block inside your src/pages/Chat.tsx file:
-  // 1. Fetch available connected contact index cards on initialization mount
   useEffect(() => {
     if (!currentUserId) return;
     setLoadingContacts(true);
@@ -34,17 +35,16 @@ export default function Chat() {
         headers: { Authorization: `Bearer ${getAccessToken()}` },
       })
       .then((res) => {
-        if (!res.ok)
-          throw new Error("Could not load secure contacts registry.");
+        if (!res.ok) throw new Error(t("chat.loadHistoryError"));
         return res.json();
       })
       .then((data: any) => {
         if (isDoctor) {
-          // Doctors pull a flat parsed array list directly
+          // Doctors pull a flat parsed array list directly containing real patient emails
           setContacts(
             data.map((p: any) => ({
               _id: p.id || p._id || p,
-              email: p.email || "patient@user.com",
+              email: p.email, // Maps the dynamic patient email directly
               roles: ["patient"],
             })),
           );
@@ -58,19 +58,20 @@ export default function Chat() {
           ) {
             const normalizedContacts = data.user.connectedUsers.map(
               (contact: any) => {
-                // ADVANCED NORMALIZATION MATRIX:
-                // Captures the key whether the element arrives as a flat string ID,
-                // an object containing ._id, or an object containing .id
                 const resolvedId =
                   typeof contact === "string"
                     ? contact
                     : contact._id || contact.id || "";
 
                 return {
-                  // If contact is an object, expand it, otherwise default to a skeleton structure
+                  // If contact is an object structure, safely copy properties across
                   ...(typeof contact === "object" ? contact : {}),
                   _id: resolvedId,
-                  email: contact.email || "doctor@user.com",
+                  // FIXED: Read the real database email dynamically out of the connection document, completely removing hardcoded strings
+                  email:
+                    typeof contact === "string"
+                      ? contact
+                      : contact.email || contact.username || "doctor@user.com",
                   roles: contact.roles || ["doctor"],
                 };
               },
@@ -83,13 +84,9 @@ export default function Chat() {
           }
         }
       })
-      .catch((err) =>
-        toast.error(
-          err.message || "Failed retrieving secure message directory list.",
-        ),
-      )
+      .catch((err) => toast.error(err.message || t("chat.sidebarHeader")))
       .finally(() => setLoadingContacts(false));
-  }, [currentUserId, isDoctor]);
+  }, [currentUserId, isDoctor, t]);
 
   // 2. Fetch linear chronological conversation logs when a contact card profile is clicked
   useEffect(() => {
@@ -101,8 +98,7 @@ export default function Chat() {
         headers: { Authorization: `Bearer ${getAccessToken()}` },
       })
       .then((res) => {
-        if (!res.ok)
-          throw new Error("Failed fetching conversation transcripts data.");
+        if (!res.ok) throw new Error(t("chat.loadHistoryError"));
         return res.json();
       })
       .then((data) => {
@@ -114,7 +110,7 @@ export default function Chat() {
       })
       .catch((err) => toast.error(err.message))
       .finally(() => setLoadingChat(false));
-  }, [activeContact]);
+  }, [activeContact, t]);
 
   // 3. Dispatch a new message text string to the backend API route validation gateways
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -144,22 +140,18 @@ export default function Chat() {
         60,
       );
     } catch (err: any) {
-      toast.error(err.message || "Message could not be processed.");
+      toast.error(err.message || t("chat.sendError"));
     }
   };
-
   return (
     <div className="min-h-[85vh] bg-base-200/40 p-4 sm:p-6 font-sans text-neutral flex items-center justify-center antialiased">
       <div className="w-full max-w-6xl bg-base-100 border border-base-200/60 rounded-2xl shadow-xl grid grid-cols-1 md:grid-cols-3 h-[75vh] overflow-hidden">
         {/* LEFT COLUMN SIDEBAR: Channels Directory */}
         <div className="md:col-span-1 border-r border-base-200 p-4 flex flex-col gap-4 bg-base-200/10 h-full overflow-hidden">
           <h2 className="text-xs font-black uppercase tracking-wider opacity-60 border-b border-base-200 pb-2 shrink-0 text-left">
-            Secure Communications
+            {t("chat.sidebarHeader")}
           </h2>
 
-          {/* Locate this section inside the sidebar return column template in Chat.tsx */}
-
-          {/* Locate this section inside the sidebar return column template in Chat.tsx */}
           <div className="flex-1 overflow-y-auto space-y-2 pr-1">
             {loadingContacts ? (
               <div className="text-center py-8">
@@ -167,50 +159,43 @@ export default function Chat() {
               </div>
             ) : contacts.length === 0 ? (
               <p className="text-xs italic opacity-40 text-center py-6">
-                No active clinical handshakes found.
+                {t("chat.emptyDirectory")}
               </p>
             ) : (
               contacts.map((contact, index) => {
-                // NEW STABLE IDENTIFIER CAPTURE:
-                // Fall back to standard .id if native mongo ._id isn't present on the object template
                 const dynamicContactId = contact._id || contact.id || "";
                 const uniqueKey = dynamicContactId || `contact-key-${index}`;
 
                 const displayRoleLabel = isDoctor
-                  ? "Patient Member"
-                  : "Clinician / Doctor";
+                  ? t("chat.patientLabel")
+                  : t("chat.doctorLabel");
 
                 return (
                   <div
                     key={uniqueKey}
                     onClick={() => {
-                      // FIX: Verify against our resolved id parameter to pass validation screens
                       if (dynamicContactId) {
                         setActiveContact({
                           ...contact,
-                          // Ensure the activeContact state always holds an explicit ._id field
-                          // so downstream history fetches don't attempt to load /history/undefined
                           _id: dynamicContactId,
                         });
                         setTypedMessage("");
                       } else {
-                        toast.error(
-                          "Invalid contact link reference footprint.",
-                        );
+                        toast.error(t("chat.invalidContact"));
                       }
                     }}
                     className={`p-3 rounded-xl cursor-pointer transition-all border text-left select-none ${
-                      // Match active styling using our dynamic identifier parameter
                       activeContact?._id === dynamicContactId &&
                       dynamicContactId
                         ? "bg-primary/10 border-primary text-primary font-bold shadow-3xs"
                         : "bg-base-100 border-base-200 hover:border-primary/40"
                     }`}
                   >
-                    <p className="text-xs truncate font-bold">
-                      {contact.email || "doctor@user.com"}
+                    {/* FIXED: Displays the dynamic email address mapped straight out of your database handshake */}
+                    <p className="text-xs truncate font-bold text-left">
+                      {contact.email}
                     </p>
-                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold block mt-0.5">
+                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold block mt-0.5 text-left">
                       {displayRoleLabel}
                     </span>
                   </div>
@@ -219,8 +204,9 @@ export default function Chat() {
             )}
           </div>
         </div>
+
         {/* RIGHT COLUMN MAIN PANEL: Interactive Chat Window Feed */}
-        <div className="md:col-span-2 flex flex-col bg-base-100 h-full overflow-hidden">
+        <div className="md:col-span-2 flex flex-col bg-base-100 h-full overflow-hidden text-left">
           {activeContact ? (
             <>
               {/* Header Context Title */}
@@ -230,7 +216,7 @@ export default function Chat() {
                     {activeContact.email}
                   </h3>
                   <p className="text-[9px] opacity-40 font-mono tracking-wider mt-0.5 uppercase">
-                    Encrypted Tunnel Stream Active
+                    {t("chat.encryptedTunnel")}
                   </p>
                 </div>
               </header>
@@ -259,10 +245,14 @@ export default function Chat() {
                           {msg.text}
                         </div>
                         <div className="chat-footer opacity-35 text-[9px] font-mono mt-1 px-1">
-                          {new Date(msg.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(msg.createdAt).toLocaleTimeString(
+                            i18n.resolvedLanguage === "de" ? "de-DE" : "en-US",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: i18n.resolvedLanguage !== "de",
+                            },
+                          )}
                         </div>
                       </div>
                     );
@@ -280,7 +270,7 @@ export default function Chat() {
                   type="text"
                   value={typedMessage}
                   onChange={(e) => setTypedMessage(e.target.value)}
-                  placeholder="Type your secure message context here..."
+                  placeholder={t("chat.placeholder")}
                   className="input input-bordered input-sm rounded-xl text-xs grow bg-base-100 border-base-200 focus:outline-primary placeholder:opacity-50"
                   disabled={loadingChat}
                 />
@@ -289,7 +279,7 @@ export default function Chat() {
                   disabled={loadingChat || !typedMessage.trim()}
                   className="btn btn-primary btn-sm rounded-xl font-bold px-5 text-xs text-white"
                 >
-                  Send
+                  {t("chat.send")}
                 </button>
               </form>
             </>
@@ -297,11 +287,10 @@ export default function Chat() {
             <div className="m-auto text-center space-y-3 opacity-30 select-none py-16">
               <div className="text-5xl">💬</div>
               <h3 className="font-black text-xs uppercase tracking-widest">
-                Encrypted Communications Hub
+                {t("chat.emptyStateTitle")}
               </h3>
               <p className="text-xs max-w-xs mx-auto font-semibold leading-normal">
-                Select a connected contact out of the sidebar channel grid to
-                inspect transcripts and exchange tracking assessments.
+                {t("chat.emptyStateSubtitle")}
               </p>
             </div>
           )}

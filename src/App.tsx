@@ -9,6 +9,8 @@ import ReportDetails from "@/pages/ReportDetails";
 import NewReportForm from "./pages/NewReportForm";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import Chat from "./pages/Chat";
+import "./i18n/config";
+
 const App = () => (
   <AuthProvider>
     <BrowserRouter>

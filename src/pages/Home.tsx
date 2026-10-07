@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/context";
+import { VITE_API_URL } from "@/config";
+import { getAccessToken } from "@/storage";
+import { toast } from "react-toastify";
 import {
   Chart as ChartJS,
   LinearScale,
@@ -36,8 +41,6 @@ ChartJS.register(
   Legend,
 );
 
-// Chart.js draws on a canvas, so it does not know about CSS. We read the theme colours here
-// and re-read them when the system (or a data-theme attribute) switches between light and dark.
 const readChartColors = () => {
   const root = getComputedStyle(document.documentElement);
   const text =
@@ -69,105 +72,72 @@ const useChartColors = () => {
 
 type Orientation = "horizontal" | "vertical";
 
-// The keys are the field names of the reports collection. Renaming a metric later only changes its label.
-const METRICS = [
-  { key: "mood", label: "Mood", color: "#3b82f6" },
-  { key: "energy", label: "Energy", color: "#f59e0b" },
-  { key: "sleep", label: "Sleep", color: "#8b5cf6" },
-  { key: "concentration", label: "Concentration", color: "#10b981" },
-  { key: "irritability", label: "Irritability", color: "#ef4444" },
-] as const;
+// FIXED: Explicitly declare the type literal constraint signature for tracking keys
+type MetricKey = "mood" | "energy" | "sleep" | "concentration" | "irritability";
 
-type MetricKey = (typeof METRICS)[number]["key"];
-
-// The same report as the client uses it (timestamp as number, id instead of _id)
 type Medication = { id: string; name: string; dosage: string };
+
+// FIXED: Linked properties correctly via intersection objects mapping MetricKey parameters
 type Report = {
   id: string;
   at: number;
   message: string;
   medications: Medication[];
-} & Record<MetricKey, number>;
+} & {
+  [key in MetricKey]: number;
+};
 
-const toReport = ({
-  _id,
-  date,
-  activeMedications,
-  ...rest
-}: ApiReport): Report => ({
-  ...rest,
-  id: _id,
-  at: new Date(date).getTime(),
-  medications: activeMedications.map((m) => ({
-    id: m.medicationId,
-    name: m.name,
-    dosage: m.dosage,
-  })),
-});
-
-// ---------------------------------------------------------------------------
-// Time window settings
-// ---------------------------------------------------------------------------
-
-const WINDOW_DAYS = 7; // days visible in the chart at once
-const BLOCK_DAYS = 7; // days loaded per request
-const WHEEL_STEP = 100; // mouse wheel distance that moves the window by one day
+const WINDOW_DAYS = 7;
+const BLOCK_DAYS = 7;
+const WHEEL_STEP = 100;
 
 const TODAY = startOfDay(new Date());
 
-// Block k covers the days [TODAY + k*7, TODAY + k*7 + 7). k is negative for the past.
 const blockStart = (k: number) => addDays(TODAY, k * BLOCK_DAYS);
 const blockOf = (date: Date) =>
   Math.floor(differenceInCalendarDays(date, TODAY) / BLOCK_DAYS);
 
-// ---------------------------------------------------------------------------
-// Loading
-// ---------------------------------------------------------------------------
-
 const fetchBlock = async (k: number): Promise<Report[]> => {
   const apiReports = await fetchReports(blockStart(k), blockStart(k + 1));
-  return apiReports.map(toReport);
+  return apiReports.map(
+    ({ _id, date, activeMedications, ...rest }: ApiReport) =>
+      ({
+        ...rest,
+        id: _id,
+        at: new Date(date).getTime(),
+        medications: activeMedications.map((m) => ({
+          id: m.medicationId,
+          name: m.name,
+          dosage: m.dosage,
+        })),
+      }) as unknown as Report,
+  );
 };
 
-// ---------------------------------------------------------------------------
-// Chart helpers
-// ---------------------------------------------------------------------------
-
-// The markers for the check-ins themselves sit in a "lane" just below the 0 line of the rating scale
 const REPORT_LANE = -0.5;
-const REPORT_DATASET_INDEX = METRICS.length;
-
-const formatDateTime = (t: number) =>
-  new Date(t).toLocaleString("de-DE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-const Home = () => {
+export const Home = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (user?.roles?.includes("doctor")) {
+      navigate("/doctor/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
   const [orientation, setOrientation] = useState<Orientation>(() =>
     window.matchMedia("(max-width: 1023px)").matches
       ? "vertical"
       : "horizontal",
   );
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-
-  // First day of the visible window. Moving it is what "scrolling" means here.
   const [windowStart, setWindowStart] = useState<Date>(() =>
     addDays(TODAY, -(WINDOW_DAYS - 1)),
   );
-
-  // Every block loaded so far, by block number. It only grows, so scrolling back never reloads.
   const [blocks, setBlocks] = useState<Record<number, Report[]>>({});
-  const [pending, setPending] = useState(0); // number of requests in flight
+  const [pending, setPending] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const requested = useRef(new Set<number>()); // blocks already requested (or loaded)
+  const requested = useRef(new Set<number>());
 
-  // AI summary of the visible week
   const [summary, setSummary] = useState<{
     range: string;
     text: string;
@@ -181,13 +151,51 @@ const Home = () => {
   const vertical = orientation === "vertical";
   const chartColors = useChartColors();
 
+  // FIXED: Cast keys strictly as MetricKey literals to prevent implicit any index type errors
+  const METRICS = useMemo(
+    () => [
+      {
+        key: "mood" as MetricKey,
+        label: t("home.metrics.mood"),
+        color: "#3b82f6",
+      },
+      {
+        key: "energy" as MetricKey,
+        label: t("home.metrics.energy"),
+        color: "#f59e0b",
+      },
+      {
+        key: "sleep" as MetricKey,
+        label: t("home.metrics.sleep"),
+        color: "#8b5cf6",
+      },
+      {
+        key: "concentration" as MetricKey,
+        label: t("home.metrics.concentration"),
+        color: "#10b981",
+      },
+      {
+        key: "irritability" as MetricKey,
+        label: t("home.metrics.irritability"),
+        color: "#ef4444",
+      },
+    ],
+    [t],
+  );
+
+  const REPORT_DATASET_INDEX = METRICS.length;
   const rangeLabel = `${format(windowStart, "dd.MM.")} – ${format(addDays(windowStart, WINDOW_DAYS - 1), "dd.MM.yyyy")}`;
+
+  const formatDateTime = (tStamp: number) =>
+    new Date(tStamp).toLocaleString(
+      i18n.resolvedLanguage === "de" ? "de-DE" : "en-US",
+      { dateStyle: "medium", timeStyle: "short" },
+    );
 
   const handleSummarize = async () => {
     setSummaryLoading(true);
     setSummaryError(null);
     try {
-      // the same days that are visible in the chart
       const text = await fetchSummary(
         windowStart,
         addDays(windowStart, WINDOW_DAYS),
@@ -195,9 +203,7 @@ const Home = () => {
       setSummary({ range: rangeLabel, text });
     } catch (error) {
       setSummaryError(
-        error instanceof Error
-          ? error.message
-          : "Could not create the summary.",
+        error instanceof Error ? error.message : t("home.summaryError"),
       );
     } finally {
       setSummaryLoading(false);
@@ -207,7 +213,6 @@ const Home = () => {
   const shiftWindow = (days: number) =>
     setWindowStart((start) => addDays(start, days));
 
-  // Load the blocks around the visible window: one week before and one week after it
   useEffect(() => {
     const first = blockOf(addDays(windowStart, -BLOCK_DAYS));
     const last = blockOf(addDays(windowStart, WINDOW_DAYS + BLOCK_DAYS - 1));
@@ -223,26 +228,21 @@ const Home = () => {
           setLoadError(null);
         })
         .catch((error: unknown) => {
-          requested.current.delete(k); // allow a retry on the next move
+          requested.current.delete(k);
           setLoadError(
-            error instanceof Error
-              ? error.message
-              : "Could not load the reports.",
+            error instanceof Error ? error.message : t("home.loadError"),
           );
         })
         .finally(() => setPending((n) => n - 1));
     }
-  }, [windowStart]);
+  }, [windowStart, t]);
 
-  // Mouse wheel over the chart moves the window. React's onWheel is a passive listener and
-  // cannot call preventDefault(), so we attach a native, non-passive listener instead.
   useEffect(() => {
     const box = chartBoxRef.current;
     if (!box) return;
 
     const onWheel = (event: WheelEvent) => {
-      event.preventDefault(); // keep the page itself from scrolling
-
+      event.preventDefault();
       const delta =
         Math.abs(event.deltaX) > Math.abs(event.deltaY)
           ? event.deltaX
@@ -253,7 +253,6 @@ const Home = () => {
       if (steps === 0) return;
       wheelDistance.current -= steps * WHEEL_STEP;
 
-      // Vertical: newest is on top, so scrolling down goes back in time. Horizontal: right = later.
       const days = vertical ? -steps : steps;
       setWindowStart((start) => addDays(start, days));
     };
@@ -262,7 +261,6 @@ const Home = () => {
     return () => box.removeEventListener("wheel", onWheel);
   }, [vertical]);
 
-  // All loaded reports as one flat list, sorted by time
   const reports = useMemo(
     () =>
       Object.values(blocks)
@@ -270,15 +268,10 @@ const Home = () => {
         .sort((a, b) => a.at - b.at),
     [blocks],
   );
-
   const data = useMemo<ChartData<"line">>(() => {
-    // The single place that knows about orientation: time goes on one axis, the rating on the other.
     const point = (time: number, value: number) =>
       vertical ? { x: value, y: time } : { x: time, y: value };
-
     return {
-      // Every dataset has one point per report, in the same order. So point number i of ANY
-      // dataset belongs to reports[i], which is how a click finds its report.
       datasets: [
         ...METRICS.map((m) => ({
           label: m.label,
@@ -286,31 +279,29 @@ const Home = () => {
           borderColor: m.color,
           backgroundColor: m.color,
           borderWidth: 2,
-          // smooth curves that never overshoot: a line between two 1s stays at 1 and can't dip below it
           cubicInterpolationMode: "monotone" as const,
           pointStyle: "rect" as const,
           pointRadius: 5,
           pointHitRadius: 10,
         })),
         {
-          label: "Check-ins (click to read)",
+          label: t("home.checkInLaneLabel"),
           data: reports.map((r) => point(r.at, REPORT_LANE)),
           showLine: false,
           borderColor: "#64748b",
           backgroundColor: "#64748b",
-          pointStyle: "rect",
+          pointStyle: "rect" as const,
           pointRadius: 8,
           pointHoverRadius: 10,
           pointHitRadius: 16,
         },
       ],
     };
-  }, [vertical, reports]);
+  }, [vertical, reports, METRICS, t]);
 
   const options = useMemo<ChartOptions<"line">>(() => {
     const timeScale = {
       type: "time" as const,
-      // The visible window. Days without data simply stay empty.
       min: windowStart.getTime(),
       max: addDays(windowStart, WINDOW_DAYS).getTime(),
       ticks: { color: chartColors.text },
@@ -330,7 +321,6 @@ const Home = () => {
       ticks: {
         color: chartColors.text,
         stepSize: 1,
-        // hide the labels of the check-in lane (negative values)
         callback: (v: string | number) => (Number(v) >= 0 ? v : ""),
       },
     };
@@ -338,42 +328,40 @@ const Home = () => {
     return {
       responsive: true,
       maintainAspectRatio: false,
-      animation: false, // no animation, so moving the window feels immediate
-      indexAxis: vertical ? "y" : "x",
-      interaction: { mode: "nearest", intersect: true },
+      animation: false,
+      indexAxis: vertical ? ("y" as const) : ("x" as const),
+      interaction: { mode: "nearest" as const, intersect: true },
       scales: vertical
         ? { x: valueScale, y: timeScale }
         : { x: timeScale, y: valueScale },
       plugins: {
         legend: {
-          position: "bottom",
+          position: "bottom" as const,
           labels: { usePointStyle: true, color: chartColors.text },
         },
         tooltip: {
           callbacks: {
-            label: (ctx) => {
+            label: (ctx: any) => {
               if (ctx.datasetIndex === REPORT_DATASET_INDEX)
-                return "Check-in – click to read";
+                return t("home.tooltipCheckIn");
               const raw = ctx.raw as { x: number; y: number };
               return `${ctx.dataset.label}: ${vertical ? raw.x : raw.y}`;
             },
           },
         },
       },
-      onClick: (_event, elements) => {
-        // Any point opens the report it belongs to
+      onClick: (_event: any, elements: any) => {
         const hit = elements[0];
         if (!hit) return;
-        const report = reports[hit.index];
-        if (report) setSelectedReport(report);
+        const clickedReport = reports[hit.index];
+        if (clickedReport) setSelectedReport(clickedReport);
       },
     };
-  }, [vertical, windowStart, reports, chartColors]);
-
+  }, [vertical, windowStart, reports, chartColors, t, REPORT_DATASET_INDEX]);
   return (
     <PageCard size="lg">
       <PageToolbar
-        title="Home"
+        title={t("home.title")}
         leading={
           <>
             <span className="text-sm font-semibold tracking-wide text-white/90">
@@ -389,40 +377,39 @@ const Home = () => {
         }
       >
         <ToolbarButton onClick={() => shiftWindow(-WINDOW_DAYS)}>
-          {vertical ? "↓" : "←"} Earlier
+          {vertical ? "↓" : "←"} {t("home.earlier")}
         </ToolbarButton>
         <ToolbarButton
           onClick={() => setWindowStart(addDays(TODAY, -(WINDOW_DAYS - 1)))}
         >
-          Today
+          {t("home.today")}
         </ToolbarButton>
         <ToolbarButton onClick={() => shiftWindow(WINDOW_DAYS)}>
-          Later {vertical ? "↑" : "→"}
+          {t("home.later")} {vertical ? "↑" : "→"}
         </ToolbarButton>
         <ToolbarDivider />
         <ToolbarButton
           active={!vertical}
           onClick={() => setOrientation("horizontal")}
         >
-          Horizontal
+          {t("home.horizontal")}
         </ToolbarButton>
         <ToolbarButton
           active={vertical}
           onClick={() => setOrientation("vertical")}
         >
-          Vertical
+          {t("home.vertical")}
         </ToolbarButton>
       </PageToolbar>
 
       {loadError && (
-        <div role="alert" className="alert alert-error rounded-2xl">
+        <div role="alert" className="alert alert-error rounded-2xl mb-4">
           {loadError}
         </div>
       )}
 
       <main className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <section className="lg:col-span-3 border border-base-200 rounded-2xl p-5 space-y-4">
-          {/* Chart.js needs a sized, relatively positioned parent when maintainAspectRatio is false */}
           <div
             ref={chartBoxRef}
             className={`relative w-full ${vertical ? "h-[70vh]" : "h-80"}`}
@@ -438,7 +425,9 @@ const Home = () => {
                 onClick={handleSummarize}
                 disabled={summaryLoading}
               >
-                {summaryLoading ? "Summarizing…" : "Summarize this week"}
+                {summaryLoading
+                  ? t("home.summarizing")
+                  : t("home.summarizeBtn")}
               </button>
               {summaryLoading && (
                 <span
@@ -447,7 +436,7 @@ const Home = () => {
                 />
               )}
               <span className="text-xs font-medium text-base-content/50">
-                AI summary of {rangeLabel}
+                {t("home.aiSummaryHeading")} {rangeLabel}
               </span>
             </div>
 
@@ -460,61 +449,59 @@ const Home = () => {
             {summary && (
               <div className="bg-base-200/60 border border-base-200 rounded-2xl p-4">
                 <h3 className="font-bold text-sm text-base-content mb-2">
-                  Summary {summary.range}
+                  {t("home.summaryTitle")} {summary.range}
                 </h3>
-                <p className="whitespace-pre-line text-sm text-base-content/80 leading-relaxed">
+                <p className="whitespace-pre-line text-sm text-base-content/80 leading-relaxed text-left">
                   {summary.text}
                 </p>
-                <p className="text-xs text-base-content/40 mt-3">
-                  Generated by AI from your check-ins. Not a medical assessment.
+                <p className="text-xs text-base-content/40 mt-3 text-left">
+                  {t("home.aiNotice")}
                 </p>
               </div>
             )}
           </div>
         </section>
 
-        <aside className="lg:col-span-1 border border-base-200 rounded-2xl p-5 space-y-3">
-          {user?.roles?.includes("patient") && (
-            <>
-              {/* NEW IMPLEMENTATION A: Secure Invitation Code Handshake Widget */}
-              <div className="border-b border-base-200 pb-4">
-                <PatientLinkHandshakeWidget />
-              </div>
-            </>
-          )}
+        <aside className="lg:col-span-1 border border-base-200 rounded-2xl p-5 space-y-3 text-left">
+          <PatientLinkHandshakeWidget />
           <h2 className="text-xs font-bold tracking-widest uppercase text-secondary">
-            Check-in
+            {t("home.checkInHeading")}
           </h2>
           {selectedReport ? (
             <>
               <p className="text-xs font-medium text-base-content/50">
                 {formatDateTime(selectedReport.at)}
               </p>
-              <p className="text-sm text-base-content/80">
+              <p className="text-sm text-base-content/80 font-medium">
                 {selectedReport.message}
               </p>
 
               <ul className="text-sm space-y-1">
                 {METRICS.map((m) => (
-                  <li key={m.key} className="flex justify-between">
+                  <li
+                    key={m.key}
+                    className="flex justify-between items-center py-0.5"
+                  >
                     <span className="text-base-content/70">{m.label}</span>
-                    <span className="badge bg-primary/5 border-none rounded text-xs font-bold p-2.5 text-base-content/80">
+                    <span className="badge bg-primary/10 border-none rounded-lg text-xs font-bold px-2 py-1 text-primary">
                       {selectedReport[m.key]}
                     </span>
                   </li>
                 ))}
               </ul>
 
-              <h3 className="font-bold text-sm text-base-content">
-                Medications
+              <h3 className="font-bold text-sm text-base-content mt-4 border-t border-base-100 pt-2">
+                {t("home.medicationsTitle")}
               </h3>
               {selectedReport.medications.length === 0 ? (
-                <p className="text-sm text-base-content/50">None</p>
+                <p className="text-sm text-base-content/50 italic">
+                  {t("home.medsNone")}
+                </p>
               ) : (
-                <ul className="text-sm text-base-content/80">
+                <ul className="text-sm text-base-content/80 space-y-1 list-disc list-inside">
                   {selectedReport.medications.map((m) => (
-                    <li key={m.id}>
-                      {m.name} – {m.dosage}
+                    <li key={m.id} className="truncate">
+                      {m.name} – <span className="opacity-60">{m.dosage}</span>
                     </li>
                   ))}
                 </ul>
@@ -522,15 +509,15 @@ const Home = () => {
 
               <button
                 type="button"
-                className="btn btn-sm btn-ghost rounded-xl"
+                className="btn btn-xs btn-ghost rounded-lg mt-4"
                 onClick={() => setSelectedReport(null)}
               >
-                Close
+                {t("home.closeBtn")}
               </button>
             </>
           ) : (
-            <p className="text-sm text-base-content/50">
-              Click a point in the chart to read that check-in.
+            <p className="text-sm text-base-content/50 italic leading-relaxed">
+              {t("home.emptyAside")}
             </p>
           )}
         </aside>
@@ -538,19 +525,16 @@ const Home = () => {
     </PageCard>
   );
 };
-import { VITE_API_URL } from "@/config";
-import { getAccessToken } from "@/storage";
-import { toast } from "react-toastify";
-import { useAuth } from "@/context/useAuth";
 
 export function PatientLinkHandshakeWidget() {
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim() || code.length !== 6) {
-      return toast.warning("Handshake code must be exactly 6 characters.");
+      return toast.warning(t("home.handshake.warning"));
     }
 
     try {
@@ -564,12 +548,13 @@ export function PatientLinkHandshakeWidget() {
         body: JSON.stringify({ code: code.toUpperCase().trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Handshake failed.");
+      if (!res.ok)
+        throw new Error(data.error || t("home.handshake.errorFallback"));
 
-      toast.success(data.message || "Secure clinical link established!");
+      toast.success(data.message || t("home.handshake.successFallback"));
       setCode("");
     } catch (err: any) {
-      toast.error(err.message || "Failed validating handshake token code.");
+      toast.error(err.message || t("home.handshake.errorFallback"));
     } finally {
       setSubmitting(false);
     }
@@ -581,16 +566,15 @@ export function PatientLinkHandshakeWidget() {
       className="card bg-base-100 p-5 border border-base-200/60 rounded-2xl shadow-xs max-w-md space-y-3 font-sans text-neutral"
     >
       <h3 className="font-bold text-xs uppercase tracking-wide opacity-70">
-        Link to Clinician
+        {t("home.handshake.title")}
       </h3>
       <p className="text-[11px] opacity-50 leading-relaxed font-medium">
-        Enter the 6-character connection token provided by your doctor to
-        securely link your profile logs.
+        {t("home.handshake.subtitle")}
       </p>
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="e.g. A9X1K4"
+          placeholder={t("home.handshake.placeholder")}
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           className="input input-bordered rounded-xl text-xs font-mono tracking-widest grow bg-base-100 focus:outline-primary"
@@ -602,10 +586,13 @@ export function PatientLinkHandshakeWidget() {
           disabled={submitting}
           className="btn btn-primary btn-sm rounded-xl font-bold h-full px-4 text-xs"
         >
-          {submitting ? "Linking..." : "Connect"}
+          {submitting
+            ? t("home.handshake.connecting")
+            : t("home.handshake.connectBtn")}
         </button>
       </div>
     </form>
   );
 }
+
 export default Home;
