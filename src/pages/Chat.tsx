@@ -4,6 +4,7 @@ import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
 import { toast } from "react-toastify";
 import type { ChatMessage, Contact } from "@/types";
+import { PageCard, PageToolbar } from "@/components";
 
 export default function Chat() {
   const { user } = useAuth();
@@ -149,24 +150,32 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-[85vh] bg-base-200/40 p-4 sm:p-6 font-sans text-neutral flex items-center justify-center antialiased">
-      <div className="w-full max-w-6xl bg-base-100 border border-base-200/60 rounded-2xl shadow-xl grid grid-cols-1 md:grid-cols-3 h-[75vh] overflow-hidden">
+    <PageCard size="lg">
+      <PageToolbar
+        title="Secure Communications"
+        leading={
+          activeContact && (
+            <span className="text-xs sm:text-sm font-semibold text-white/70 truncate max-w-48 sm:max-w-xs">
+              {activeContact.email}
+            </span>
+          )
+        }
+      />
+
+      <main className="grid grid-cols-1 md:grid-cols-3 md:h-[65vh] border border-base-content/10 rounded-2xl overflow-hidden">
         {/* LEFT COLUMN SIDEBAR: Channels Directory */}
-        <div className="md:col-span-1 border-r border-base-200 p-4 flex flex-col gap-4 bg-base-200/10 h-full overflow-hidden">
-          <h2 className="text-xs font-black uppercase tracking-wider opacity-60 border-b border-base-200 pb-2 shrink-0 text-left">
-            Secure Communications
+        <div className="md:col-span-1 border-b md:border-b-0 md:border-r border-base-content/10 p-4 flex flex-col gap-4 bg-base-content/5 max-h-60 md:max-h-none md:h-full overflow-hidden">
+          <h2 className="text-xs font-black uppercase tracking-wider text-base-content/60 border-b border-base-content/10 pb-2 shrink-0 text-left">
+            Contacts
           </h2>
 
-          {/* Locate this section inside the sidebar return column template in Chat.tsx */}
-
-          {/* Locate this section inside the sidebar return column template in Chat.tsx */}
           <div className="flex-1 overflow-y-auto space-y-2 pr-1">
             {loadingContacts ? (
               <div className="text-center py-8">
                 <span className="loading loading-spinner text-primary loading-sm"></span>
               </div>
             ) : contacts.length === 0 ? (
-              <p className="text-xs italic opacity-40 text-center py-6">
+              <p className="text-xs italic text-base-content/40 text-center py-6">
                 No active clinical handshakes found.
               </p>
             ) : (
@@ -203,14 +212,14 @@ export default function Chat() {
                       // Match active styling using our dynamic identifier parameter
                       activeContact?._id === dynamicContactId &&
                       dynamicContactId
-                        ? "bg-primary/10 border-primary text-primary font-bold shadow-3xs"
-                        : "bg-base-100 border-base-200 hover:border-primary/40"
+                        ? "bg-primary/10 border-primary text-primary font-bold"
+                        : "bg-base-100 border-base-content/10 hover:border-primary/40"
                     }`}
                   >
                     <p className="text-xs truncate font-bold">
                       {contact.email || "doctor@user.com"}
                     </p>
-                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold block mt-0.5">
+                    <span className="text-[9px] uppercase tracking-widest text-base-content/50 font-bold block mt-0.5">
                       {displayRoleLabel}
                     </span>
                   </div>
@@ -219,27 +228,28 @@ export default function Chat() {
             )}
           </div>
         </div>
+
         {/* RIGHT COLUMN MAIN PANEL: Interactive Chat Window Feed */}
-        <div className="md:col-span-2 flex flex-col bg-base-100 h-full overflow-hidden">
+        <div className="md:col-span-2 flex flex-col bg-base-100 h-[60vh] md:h-full overflow-hidden">
           {activeContact ? (
             <>
               {/* Header Context Title */}
-              <header className="p-4 border-b border-base-200 bg-base-200/10 flex justify-between items-center shrink-0 select-none">
+              <header className="p-4 border-b border-base-content/10 bg-base-content/5 flex justify-between items-center shrink-0 select-none">
                 <div className="text-left">
                   <h3 className="text-xs font-black truncate max-w-sm sm:max-w-md">
                     {activeContact.email}
                   </h3>
-                  <p className="text-[9px] opacity-40 font-mono tracking-wider mt-0.5 uppercase">
+                  <p className="text-[9px] text-base-content/50 font-mono tracking-wider mt-0.5 uppercase">
                     Encrypted Tunnel Stream Active
                   </p>
                 </div>
               </header>
 
               {/* Chat Thread Messages Box View */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200/5 text-left">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 text-left">
                 {loadingChat ? (
                   <div className="h-full flex items-center justify-center">
-                    <span className="loading loading-dots text-neutral/30"></span>
+                    <span className="loading loading-dots text-base-content/30"></span>
                   </div>
                 ) : (
                   messages.map((msg) => {
@@ -250,15 +260,15 @@ export default function Chat() {
                         className={`chat ${isMyMessage ? "chat-end" : "chat-start"}`}
                       >
                         <div
-                          className={`chat-bubble text-xs rounded-2xl p-3 max-w-xs sm:max-w-md leading-relaxed ${
+                          className={`chat-bubble text-xs rounded-2xl p-3 max-w-xs sm:max-w-md leading-relaxed font-medium ${
                             isMyMessage
-                              ? "chat-bubble-primary text-white font-medium shadow-3xs"
-                              : "chat-bubble-neutral border border-base-200 bg-base-100 text-neutral font-medium shadow-3xs"
+                              ? "chat-bubble-primary text-white"
+                              : "bg-base-content/10 text-base-content"
                           }`}
                         >
                           {msg.text}
                         </div>
-                        <div className="chat-footer opacity-35 text-[9px] font-mono mt-1 px-1">
+                        <div className="chat-footer text-base-content/40 text-[9px] font-mono mt-1 px-1">
                           {new Date(msg.createdAt).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -274,14 +284,14 @@ export default function Chat() {
               {/* Input Interactive Action Form */}
               <form
                 onSubmit={handleSendMessage}
-                className="p-3 border-t border-base-200 bg-base-200/10 flex gap-2 shrink-0"
+                className="p-3 border-t border-base-content/10 bg-base-content/5 flex gap-2 shrink-0"
               >
                 <input
                   type="text"
                   value={typedMessage}
                   onChange={(e) => setTypedMessage(e.target.value)}
                   placeholder="Type your secure message context here..."
-                  className="input input-bordered input-sm rounded-xl text-xs grow bg-base-100 border-base-200 focus:outline-primary placeholder:opacity-50"
+                  className="input input-bordered input-sm rounded-xl text-xs grow bg-base-100 border-base-content/20 focus:outline-primary placeholder:text-base-content/40"
                   disabled={loadingChat}
                 />
                 <button
@@ -294,7 +304,7 @@ export default function Chat() {
               </form>
             </>
           ) : (
-            <div className="m-auto text-center space-y-3 opacity-30 select-none py-16">
+            <div className="m-auto text-center space-y-3 text-base-content/40 select-none py-16">
               <div className="text-5xl">💬</div>
               <h3 className="font-black text-xs uppercase tracking-widest">
                 Encrypted Communications Hub
@@ -306,7 +316,7 @@ export default function Chat() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </main>
+    </PageCard>
   );
 }
