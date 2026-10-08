@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import { PageCard, PageToolbar, ToolbarButton } from "@/components";
 
 export default function ReportDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation(); // Instantiates translation function (t) and engine context (i18n)
 
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -22,10 +24,7 @@ export default function ReportDetails() {
     setLoading(true);
     fetch(`http://localhost:3000/reports/${id}`)
       .then((res) => {
-        if (!res.ok)
-          throw new Error(
-            "Could not locate targeted reporting log document reference.",
-          );
+        if (!res.ok) throw new Error(t("details.locateError"));
         return res.json();
       })
       .then((data) => {
@@ -36,7 +35,7 @@ export default function ReportDetails() {
         console.error("Details database retrieval exception:", err),
       )
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, t]);
 
   // 2. DELETE LIFECYCLE ACTION HANDLER
   const handleDeleteConfirmExecution = async () => {
@@ -54,11 +53,11 @@ export default function ReportDetails() {
         throw new Error(errorData.error || "Failed dropping record.");
       }
 
-      toast.success("Progress record deleted successfully.");
+      toast.success(t("details.deleteSuccess"));
       navigate("/reports");
     } catch (err: unknown) {
       const message = (err as Error).message;
-      toast.error(message || "An unexpected error occurred during removal.");
+      toast.error(message || t("details.deleteErrorFallback"));
     } finally {
       setIsDeleting(false);
     }
@@ -93,13 +92,11 @@ export default function ReportDetails() {
 
       const updatedReport = await res.json();
       setReport(updatedReport);
-      toast.success("Progress report updated successfully!");
+      toast.success(t("details.updateSuccess"));
       setIsEditing(false);
     } catch (err: unknown) {
       const message = (err as Error).message;
-      toast.error(
-        message || "Validation failure during edit update execution.",
-      );
+      toast.error(message || t("details.updateErrorFallback"));
     } finally {
       setLoading(false);
     }
@@ -118,67 +115,72 @@ export default function ReportDetails() {
       <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center space-y-4">
         <div className="text-3xl select-none">⚠️</div>
         <p className="text-sm font-semibold text-base-content/50 tracking-wide">
-          Progress report details could not be found.
+          {t("details.notFoundTitle")}
         </p>
         <button
           onClick={() => navigate("/reports")}
           className="btn btn-sm btn-neutral text-white rounded-xl px-5 font-bold cursor-pointer"
         >
-          Back to Reports List
+          {t("details.backToListBtn")}
         </button>
       </div>
     );
   }
+
+  const isGermanActive = i18n.resolvedLanguage === "de";
+
   const snapshotMeds = Array.isArray(report.activeMedications)
     ? report.activeMedications
     : [];
 
-  const displayDate = new Date(report.date).toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const displayDate = new Date(report.date).toLocaleDateString(
+    isGermanActive ? "de-DE" : "en-US",
+    {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    },
+  );
 
   const METRIC_CONFIGS = [
     {
       key: "mood",
-      label: "Mood Scale",
-      left: "Severe Low",
-      right: "Excellent",
+      label: t("home.metrics.mood"),
+      left: t("home.metrics.mood.low"),
+      right: t("home.metrics.mood.high"),
     },
     {
       key: "irritability",
-      label: "Irritability",
-      left: "Calm / None",
-      right: "Severe",
+      label: t("home.metrics.irritability"),
+      left: t("home.metrics.irritability.low"),
+      right: t("home.metrics.irritability.high"),
     },
     {
       key: "energy",
-      label: "Energy Level",
-      left: "Fatigue",
-      right: "High Alert",
+      label: t("home.metrics.energy"),
+      left: t("home.metrics.energy.low"),
+      right: t("home.metrics.energy.high"),
     },
     {
       key: "sleep",
-      label: "Sleep Quality",
-      left: "Restless",
-      right: "Excellent Rest",
+      label: t("home.metrics.sleep"),
+      left: t("home.metrics.sleep.low"),
+      right: t("home.metrics.sleep.high"),
     },
     {
       key: "concentration",
-      label: "Concentration",
-      left: "Brain Fog",
-      right: "Very Sharp",
+      label: t("home.metrics.concentration"),
+      left: t("home.metrics.concentration.low"),
+      right: t("home.metrics.concentration.high"),
     },
   ];
 
   const SCALES = [0, 1, 2, 3, 4, 5];
-
   return (
     <PageCard>
       <PageToolbar
-        title="Report"
+        title={t("details.toolbarTitle")}
         leading={
           <span className="text-sm font-semibold tracking-wide text-white/90">
             {displayDate}
@@ -186,19 +188,19 @@ export default function ReportDetails() {
         }
       >
         <ToolbarButton onClick={() => navigate("/reports")}>
-          ← Reports
+          {t("details.backToolbarBtn")}
         </ToolbarButton>
       </PageToolbar>
 
       {/* Prescription Snapshot View */}
       <div className="bg-base-200/40 p-4 rounded-xl border border-base-200 space-y-2">
         <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
-          Prescription Snapshot on Log Date
+          {t("details.snapshotTitle")}
         </span>
         <div className="flex flex-wrap gap-2">
           {snapshotMeds.length === 0 ? (
             <span className="text-xs text-base-content/40 italic">
-              No active medications recorded on this timeline calendar block.
+              {t("details.noMedsRecorded")}
             </span>
           ) : (
             snapshotMeds.map((m: any, idx: number) => (
@@ -216,13 +218,12 @@ export default function ReportDetails() {
       {/* Clinical Notes Summary Observation Output Context Card */}
       <div className="space-y-2 mt-4">
         <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
-          Patient Observation Notes (Message)
+          {t("details.notesTitle")}
         </span>
         <div className="p-4 bg-base-200/40 border border-base-200 rounded-xl text-sm text-base-content/80 min-h-20 font-medium leading-relaxed shadow-inner">
           {report.message || (
             <span className="italic opacity-40 font-normal">
-              No custom observations or side-effect descriptions were logged on
-              this day record.
+              {t("details.noNotesRecorded")}
             </span>
           )}
         </div>
@@ -237,14 +238,14 @@ export default function ReportDetails() {
           return (
             <div
               key={item.key}
-              className="p-6 border border-base-200/60 bg-base-100 rounded-3xl space-y-4 shadow-sm"
+              className="p-6 border border-base-200/60 bg-base-100 rounded-3xl space-y-4 shadow-sm text-left"
             >
               <div className="flex justify-between items-center px-1">
                 <span className="font-bold text-xs uppercase tracking-widest text-base-content/70">
                   {item.label}
                 </span>
                 <span className="text-base-content font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
-                  Score: {scoreValue}
+                  {t("details.scoreLabel")}: {scoreValue}
                 </span>
               </div>
 
@@ -256,7 +257,7 @@ export default function ReportDetails() {
                       "bg-base-200/30 text-base-content/40 font-medium";
 
                     if (isSelected) {
-                      if (item.label === "Irritability") {
+                      if (item.key === "irritability") {
                         if (val <= 1)
                           activeStyles =
                             "bg-emerald-600 text-white font-black shadow-md scale-[1.02]";
@@ -310,34 +311,34 @@ export default function ReportDetails() {
           className="btn btn-outline btn-primary rounded-xl px-6 font-bold flex items-center gap-2"
           disabled={isDeleting}
         >
-          Edit Report
+          {t("details.editReportBtn")}
         </button>
 
         <button
           onClick={() => setShowDeleteConfirm(true)}
-          className={`btn btn-error  rounded-xl px-6 font-bold flex items-center gap-2`}
+          className="btn btn-error rounded-xl px-6 font-bold flex items-center gap-2"
           disabled={isDeleting}
         >
-          Delete
+          {t("details.deleteBtn")}
         </button>
       </div>
 
       {/* ACTION EDIT OVERLAY SCREEN MODAL PANEL */}
       {isEditing && editForm && (
         <div className="modal modal-open backdrop-blur-xs">
-          <div className="modal-box rounded-3xl bg-base-100 max-w-2xl border border-base-200 shadow-2xl p-6">
+          <div className="modal-box rounded-3xl bg-base-100 max-w-2xl border border-base-200 shadow-2xl p-6 text-left">
             <h3 className="font-black text-xl mb-6 text-primary flex items-center gap-2">
-              📝 Edit Daily Progress Record
+              {t("details.modalTitle")}
             </h3>
 
             <form onSubmit={handleEditSubmit} className="space-y-6">
               <div className="form-control w-full space-y-1">
                 <label className="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">
-                  Observations & Symptoms Note
+                  {t("details.modalNotesLabel")}
                 </label>
                 <textarea
                   className="textarea textarea-bordered rounded-xl w-full bg-base-100 min-h-[100px] text-sm focus:textarea-primary"
-                  placeholder="Describe how you are feeling..."
+                  placeholder={t("details.modalPlaceholder")}
                   value={editForm.message ?? ""}
                   onChange={(e) =>
                     setEditForm({ ...editForm, message: e.target.value })
@@ -358,7 +359,8 @@ export default function ReportDetails() {
                           {item.label}
                         </span>
                         <span className="badge badge-neutral rounded-lg px-2 py-1 text-xs font-bold">
-                          Selected: {currentStagedValue}
+                          {t("details.modalSelectedLabel")}:{" "}
+                          {currentStagedValue}
                         </span>
                       </div>
 
@@ -369,7 +371,7 @@ export default function ReportDetails() {
                             "bg-base-100 text-base-content/50 hover:bg-base-200/50 cursor-pointer";
 
                           if (isStaged) {
-                            if (item.label === "Irritability") {
+                            if (item.key === "irritability") {
                               if (val <= 1)
                                 activeStagedStyle =
                                   "bg-emerald-600 text-white font-black shadow-md scale-105";
@@ -417,13 +419,13 @@ export default function ReportDetails() {
                   onClick={() => setIsEditing(false)}
                   className="btn btn-ghost rounded-xl px-5 font-bold"
                 >
-                  Cancel
+                  {t("details.modalCancelBtn")}
                 </button>
                 <button
                   type="submit"
                   className="btn btn-primary rounded-xl px-6 font-bold"
                 >
-                  Save Progress Changes
+                  {t("details.modalSaveBtn")}
                 </button>
               </div>
             </form>
@@ -438,11 +440,10 @@ export default function ReportDetails() {
             <div className="text-center space-y-3">
               <div className="text-4xl">⚠️</div>
               <h3 className="font-black text-xl text-error">
-                Permanently Delete?
+                {t("details.deleteConfirmTitle")}
               </h3>
               <p className="text-sm font-medium text-base-content/70 leading-relaxed">
-                This action is irreversible. Are you sure you want to drop this
-                daily progress record out of your tracking history?
+                {t("details.deleteConfirmText")}
               </p>
             </div>
             <div className="modal-action justify-center gap-3 mt-6">
@@ -451,14 +452,14 @@ export default function ReportDetails() {
                 onClick={() => setShowDeleteConfirm(false)}
                 className="btn btn-primary rounded-xl px-5 font-bold"
               >
-                No, Keep It
+                {t("details.deleteConfirmCancel")}
               </button>
               <button
                 type="button"
                 onClick={handleDeleteConfirmExecution}
-                className="btn btn-error  rounded-xl px-5 font-bold shadow-md"
+                className="btn btn-error rounded-xl px-5 font-bold shadow-md"
               >
-                Yes, Delete
+                {t("details.deleteConfirmSubmit")}
               </button>
             </div>
           </div>
