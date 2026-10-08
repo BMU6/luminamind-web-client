@@ -5,6 +5,7 @@ import { getAccessToken } from "@/storage";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { PageCard, PageToolbar } from "@/components";
+import { useMedications } from "@/network/medicationlist";
 
 interface ConnectedPatient {
   id: string;
@@ -186,7 +187,8 @@ export default function DoctorDashboard() {
         </div>
 
         {/* RIGHT COLUMN: Patient Summary and Chart Workspace Panel */}
-        <div className="md:col-span-2 border border-base-content/10 rounded-2xl p-6 flex flex-col gap-6 min-h-[60vh] bg-base-100 shadow-xs">
+        {/* RIGHT COLUMN: Patient Summary and Chart Workspace Panel */}
+        <div className="md:col-span-2 border border-base-content/10 rounded-2xl p-6 flex flex-col gap-5 min-h-[60vh] bg-base-100 shadow-xs">
           {selectedPatient ? (
             <>
               <header className="border-b border-base-content/10 pb-3 flex flex-wrap gap-2 justify-between items-center">
@@ -219,13 +221,24 @@ export default function DoctorDashboard() {
                 )}
               </div>
 
+              {/* DYNAMIC MEDICATION COMPONENT VIEW: Injected Right inside the Doctor's Active Dashboard Workspace! */}
+              <DoctorMedicationWorkspace
+                userId={
+                  user && "sub" in user
+                    ? (user.sub as string)
+                    : (user as any)?.id || (user as any)?._id || ""
+                }
+                patientId={selectedPatient.id}
+                t={t}
+              />
+
               {/* Chart Canvas Engine Box Canvas Placeholder */}
-              <div className="flex-1 border border-dashed border-base-content/20 rounded-xl flex flex-col items-center justify-center bg-base-content/5 text-center p-6 min-h-[250px]">
-                <span className="text-xl opacity-40 mb-1">📈</span>
-                <h4 className="font-bold text-xs text-base-content/60 mb-1">
+              <div className="border border-dashed border-base-content/20 rounded-xl flex flex-col items-center justify-center bg-base-content/5 text-center p-4 min-h-[140px]">
+                <span className="text-sm opacity-40 mb-0.5">📈</span>
+                <h4 className="font-bold text-[11px] text-base-content/60 mb-0.5">
                   {t("doctor.chartHeading")}
                 </h4>
-                <p className="text-[10px] text-base-content/40 font-semibold max-w-xs leading-normal">
+                <p className="text-[9px] text-base-content/40 font-semibold max-w-xs leading-normal">
                   {t("doctor.chartSubtitle")}
                 </p>
               </div>
@@ -244,5 +257,171 @@ export default function DoctorDashboard() {
         </div>
       </main>
     </PageCard>
+  );
+}
+interface DoctorMedicationWorkspaceProps {
+  userId: string;
+  patientId: string;
+  t: any;
+}
+
+export function DoctorMedicationWorkspace({
+  userId,
+  patientId,
+  t,
+}: DoctorMedicationWorkspaceProps) {
+  const {
+    medications,
+    loading,
+    handleCheckboxChange,
+    handleInputChange,
+    toggleEditMode,
+    deleteMedication,
+    addMedication,
+  } = useMedications(userId, patientId);
+
+  return (
+    <div className="space-y-4 mt-2">
+      <div className="flex justify-between items-center border-b border-base-content/10 pb-2">
+        <h4 className="text-xs font-black uppercase tracking-wider text-base-content/60">
+          📋 {t("doctor.medsWorkspaceHeading", "Active Regimen Matrix")}
+        </h4>
+        <button
+          onClick={addMedication}
+          className="btn btn-xs btn-primary font-bold text-white rounded-lg px-2.5"
+        >
+          + {t("meds.addBtn", "Add Medication")}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-4 flex items-center justify-center gap-2 text-xs text-base-content/40">
+          <span className="loading loading-spinner loading-xs"></span>
+          <span>{t("meds.loading")}</span>
+        </div>
+      ) : medications.length === 0 ? (
+        <p className="text-xs text-base-content/40 italic py-2">
+          {t(
+            "meds.emptyTitle",
+            "No current medications linked to this patient.",
+          )}
+        </p>
+      ) : (
+        <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
+          {medications.map((med) => (
+            <div
+              key={med.id}
+              className="border border-base-content/10 rounded-xl p-3 bg-base-200/30 text-left space-y-3"
+            >
+              <div className="flex items-center justify-between gap-3">
+                {med.isEditing ? (
+                  <input
+                    type="text"
+                    value={med.name}
+                    onChange={(e) =>
+                      handleInputChange(med.id, "name", e.target.value)
+                    }
+                    className="input input-xs bg-base-100 border border-base-content/20 rounded-lg grow font-bold text-xs p-2 h-7 focus:outline-primary"
+                  />
+                ) : (
+                  <span className="font-bold text-xs text-base-content">
+                    {med.name}
+                  </span>
+                )}
+                <span className="badge bg-accent text-[10px] font-bold border-none rounded-md py-1 px-2">
+                  {med.dosage || "0mg"}
+                </span>
+              </div>
+
+              {/* Extra Parameters Expand Form fields */}
+              <div className="grid grid-cols-2 gap-3 text-[11px]">
+                <div>
+                  <span className="block opacity-40 font-bold uppercase text-[9px] mb-0.5">
+                    {t("meds.dosageLabel")}
+                  </span>
+                  {med.isEditing ? (
+                    <input
+                      type="text"
+                      value={med.dosage}
+                      onChange={(e) =>
+                        handleInputChange(med.id, "dosage", e.target.value)
+                      }
+                      className="input input-xs bg-base-100 border border-base-content/20 rounded-lg w-full h-6 px-2 focus:outline-primary"
+                    />
+                  ) : (
+                    <span className="font-medium">{med.dosage || "—"}</span>
+                  )}
+                </div>
+                <div>
+                  <span className="block opacity-40 font-bold uppercase text-[9px] mb-0.5">
+                    {t("meds.effectLabel")}
+                  </span>
+                  {med.isEditing ? (
+                    <input
+                      type="text"
+                      value={med.effect}
+                      onChange={(e) =>
+                        handleInputChange(med.id, "effect", e.target.value)
+                      }
+                      className="input input-xs bg-base-100 border border-base-content/20 rounded-lg w-full h-6 px-2 focus:outline-primary"
+                    />
+                  ) : (
+                    <span className="font-medium truncate block">
+                      {med.effect || "—"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Timing Checklist Grid matrix */}
+              <div className="bg-base-100 p-2 rounded-lg border border-base-content/5 flex justify-between gap-2 text-[10px]">
+                {Object.keys(med.schedule).map((slot) => {
+                  const isActive = (med.schedule as any)[slot];
+                  return (
+                    <label
+                      key={slot}
+                      className="flex items-center gap-1 cursor-pointer select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isActive}
+                        disabled={!med.isEditing}
+                        onChange={() =>
+                          handleCheckboxChange(med.id, slot as any)
+                        }
+                        className="checkbox checkbox-xs checkbox-primary rounded-sm"
+                      />
+                      <span className={isActive ? "font-bold" : "opacity-40"}>
+                        {slot}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              {/* Execution panel button triggers */}
+              <div className="flex justify-end gap-2 pt-1 border-t border-base-content/5 text-[10px]">
+                <button
+                  onClick={() => toggleEditMode(med.id)}
+                  className={`px-3 py-1 font-bold rounded-lg border transition-all ${
+                    med.isEditing
+                      ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
+                      : "bg-base-100 border-base-content/10 hover:bg-base-content/5"
+                  }`}
+                >
+                  {med.isEditing ? t("meds.saveBtn") : t("meds.editBtn")}
+                </button>
+                <button
+                  onClick={() => deleteMedication(med.id)}
+                  className="px-2 py-1 text-error font-bold hover:bg-error/10 rounded-lg"
+                >
+                  {t("meds.deleteBtn")}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
