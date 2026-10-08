@@ -1,22 +1,30 @@
 import { useState, useEffect } from "react";
 import { MedicationListType } from "@/types/medicationType";
+import { getAccessToken } from "@/storage";
 
-// 1. The userId only tells us that the session is ready; the server takes the owner from the access token
-export function useMedications(userId: string) {
+export function useMedications(userId: string, targetPatientId?: string) {
   const [medications, setMedications] = useState<MedicationListType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 2. Fetch records filtering by the logged-in user
   useEffect(() => {
     if (!userId) return;
 
     const fetchMedications = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `http://localhost:3000/medicationlist`,
-        );
+
+        const url = targetPatientId
+          ? `http://localhost:3000/medicationlist?patientId=${targetPatientId}`
+          : `http://localhost:3000/medicationlist`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -42,21 +50,25 @@ export function useMedications(userId: string) {
     };
 
     fetchMedications();
-  }, [userId]); // Re-runs if the user switching occurs
-
-  // 3. Commit a new medication matching the active user
+  }, [userId, targetPatientId]);
   const addMedication = async () => {
     try {
+      // Explicitly map either 'patientId' or 'userId' depending on backend specs
       const templateMedication = {
         name: "New Medication Entry",
         dosage: "0 mg",
         schedule: { morning: false, noon: false, evening: false, night: false },
         effect: "",
+        userId: targetPatientId || userId,
+        patientId: targetPatientId || userId,
       };
 
       const response = await fetch("http://localhost:3000/medicationlist/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
         body: JSON.stringify(templateMedication),
       });
 
@@ -76,7 +88,6 @@ export function useMedications(userId: string) {
     }
   };
 
-  // 4. Update fields via PUT
   const toggleEditMode = async (id: string) => {
     const currentMed = medications.find((m) => m.id === id);
 
@@ -86,7 +97,10 @@ export function useMedications(userId: string) {
           `http://localhost:3000/medicationlist/${id}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getAccessToken()}`,
+            },
             body: JSON.stringify({
               name: currentMed.name,
               dosage: currentMed.dosage,
@@ -132,6 +146,9 @@ export function useMedications(userId: string) {
         `http://localhost:3000/medicationlist/${id}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
         },
       );
       if (!response.ok) throw new Error("DELETE request failed");
