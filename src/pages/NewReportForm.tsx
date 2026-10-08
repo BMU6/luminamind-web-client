@@ -1,17 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/context/useAuth";
+import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import { PageCard, PageToolbar, ToolbarButton } from "@/components";
 
 export default function NewReportForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation(); // Pulls the lookup translation handles
+
   const userId =
     user && "sub" in user
       ? (user.sub as string)
       : (user as any)?.id || (user as any)?._id || "";
 
-  // 1. Core Clinical Metric Sliders State (Defaults to neutral 3 or safe baseline 0)
+  // 1. Core Clinical Metric Sliders State
   const [mood, setMood] = useState<number>(3);
   const [irritability, setIrritability] = useState<number>(0);
   const [energy, setEnergy] = useState<number>(3);
@@ -19,7 +22,7 @@ export default function NewReportForm() {
   const [concentration, setConcentration] = useState<number>(3);
   const [message, setMessage] = useState<string>("");
 
-  // 2. Active Medications Auto-population Registry Memory
+  // 2. Active Medications State parameters
   const [availableMeds, setAvailableMeds] = useState<any[]>([]);
   const [loadingMeds, setLoadingMeds] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -41,7 +44,6 @@ export default function NewReportForm() {
     try {
       setSubmitting(true);
 
-      // Automated snapshot creation matching your backend schema bounds
       const activeMedicationsSnapshot = availableMeds.map((m) => ({
         medicationId: m.id || m._id,
         name: m.name,
@@ -51,21 +53,20 @@ export default function NewReportForm() {
       const response = await fetch("http://localhost:3000/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify({
           mood,
           irritability,
           energy,
           sleep,
           concentration,
           message,
-          activeMedications: activeMedicationsSnapshot, // Sent automatically
+          activeMedications: activeMedicationsSnapshot,
         }),
       });
 
       if (!response.ok)
         throw new Error("Failed committing progress metrics log.");
 
-      // Route smoothly back to the historical logs dashboard upon success
       navigate("/reports");
     } catch (err) {
       console.error(err);
@@ -79,34 +80,73 @@ export default function NewReportForm() {
       <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center p-4">
         <span className="loading loading-spinner loading-md text-primary"></span>
         <p className="ml-3 text-sm font-medium text-base-content/50">
-          Verifying session context...
+          {t("newReport.verifyingSession")}
         </p>
       </div>
     );
   }
+
+  const isGermanActive = i18n.resolvedLanguage === "de";
+
+  const METRIC_CONFIGS = [
+    {
+      label: t("newReport.metrics.mood.label"),
+      state: mood,
+      setter: setMood,
+      left: t("newReport.metrics.mood.left"),
+      right: t("newReport.metrics.mood.right"),
+    },
+    {
+      label: t("newReport.metrics.irritability.label"),
+      state: irritability,
+      setter: setIrritability,
+      left: t("newReport.metrics.irritability.left"),
+      right: t("newReport.metrics.irritability.right"),
+    },
+    {
+      label: t("newReport.metrics.energy.label"),
+      state: energy,
+      setter: setEnergy,
+      left: t("newReport.metrics.energy.left"),
+      right: t("newReport.metrics.energy.right"),
+    },
+    {
+      label: t("newReport.metrics.sleep.label"),
+      state: sleep,
+      setter: setSleep,
+      left: t("newReport.metrics.sleep.left"),
+      right: t("newReport.metrics.sleep.right"),
+    },
+    {
+      label: t("newReport.metrics.concentration.label"),
+      state: concentration,
+      setter: setConcentration,
+      left: t("newReport.metrics.concentration.left"),
+      right: t("newReport.metrics.concentration.right"),
+    },
+  ];
   return (
     <PageCard>
       <PageToolbar
-        title="New Report"
+        title={t("newReport.toolbarTitle")}
         leading={
-          // Time & date of this entry
           <span className="text-sm font-semibold tracking-wide text-white/90">
-            {new Date().toLocaleDateString(undefined, {
+            {new Date().toLocaleDateString(isGermanActive ? "de-DE" : "en-US", {
               weekday: "short",
               month: "short",
               day: "numeric",
             })}{" "}
             @{" "}
-            {new Date().toLocaleTimeString(undefined, {
+            {new Date().toLocaleTimeString(isGermanActive ? "de-DE" : "en-US", {
               hour: "numeric",
               minute: "2-digit",
-              hour12: true, // Forces AM/PM output format
+              hour12: !isGermanActive,
             })}
           </span>
         }
       >
         <ToolbarButton onClick={() => navigate("/reports")}>
-          ← Cancel
+          {t("newReport.cancelBtn")}
         </ToolbarButton>
       </PageToolbar>
 
@@ -114,19 +154,19 @@ export default function NewReportForm() {
         {/* Automated Medication Treatment Snapshot Badge Display */}
         <div className="bg-base-200/40 p-4 rounded-xl border border-base-200 space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
-            Auto-Attaching Current Prescription Snapshot
+            {t("newReport.snapshotTitle")}
           </span>
           <div className="flex flex-wrap gap-2">
             {loadingMeds ? (
               <span className="loading loading-dots loading-xs text-base-content/40"></span>
             ) : availableMeds.length === 0 ? (
               <span className="text-xs text-base-content/40 italic">
-                No scheduled active medications logged on your profile today.
+                {t("newReport.noMeds")}
               </span>
             ) : (
               availableMeds.map((m) => (
                 <span
-                  key={m.id}
+                  key={m.id || m._id}
                   className="badge bg-primary/10 border border-primary/20 text-base-content text-xs font-semibold px-3 py-2.5 rounded-lg shadow-sm"
                 >
                   💊 {m.name} ({m.dosage})
@@ -135,62 +175,23 @@ export default function NewReportForm() {
             )}
           </div>
         </div>
+
         {/* Notes Log Message Fields */}
         <div className="form-control space-y-1.5">
           <label className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
-            Daily Notes & Observations (Message)
+            {t("newReport.notesLabel")}
           </label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Describe any custom psychological observations, side-effects, or notable therapy milestones encountered today..."
+            placeholder={t("newReport.notesPlaceholder")}
             className="textarea textarea-bordered rounded-2xl text-sm focus:outline-primary shadow-inner h-24 p-4 border-base-200 bg-base-100 w-full"
           />
         </div>
+
         {/* 5-Metric Dynamic Color-Shifting Radio Button Matrix */}
         <div className="space-y-6">
-          {[
-            {
-              label: "Mood",
-              state: mood,
-              setter: setMood,
-              left: "Severe Low",
-              right: "Excellent",
-              invertColor: true,
-            },
-            {
-              label: "Irritability",
-              state: irritability,
-              setter: setIrritability,
-              left: "Calm / None",
-              right: "Severe",
-              invertColor: false,
-            },
-            {
-              label: "Energy Level",
-              state: energy,
-              setter: setEnergy,
-              left: "Fatigue",
-              right: "High Alert",
-              invertColor: true,
-            },
-            {
-              label: "Sleep Quality",
-              state: sleep,
-              setter: setSleep,
-              left: "Restless",
-              right: "Excellent Rest",
-              invertColor: true,
-            },
-            {
-              label: "Concentration",
-              state: concentration,
-              setter: setConcentration,
-              left: "Brain Fog",
-              right: "Very Sharp",
-              invertColor: true,
-            },
-          ].map((item) => (
+          {METRIC_CONFIGS.map((item) => (
             <div
               key={item.label}
               className="p-5 border border-base-200 bg-base-200/10 rounded-2xl space-y-3 shadow-inner"
@@ -201,7 +202,7 @@ export default function NewReportForm() {
                   {item.label}
                 </span>
                 <span className="text-base-content font-black bg-base-100 border border-base-300 px-3 py-1 rounded-xl text-xs shadow-xs">
-                  Score: {item.state}
+                  {t("newReport.scoreLabel")}: {item.state}
                 </span>
               </div>
 
@@ -216,7 +217,9 @@ export default function NewReportForm() {
 
                   // Apply static, unpurgeable classes explicitly when selected
                   if (isSelected) {
-                    if (item.label === "Irritability") {
+                    if (
+                      item.label === t("newReport.metrics.irritability.label")
+                    ) {
                       // High is BAD (e.g., Irritability turning red)
                       if (score <= 1)
                         activeStyles =
@@ -278,7 +281,7 @@ export default function NewReportForm() {
             disabled={submitting}
             className="btn btn-md btn-neutral text-white rounded-xl px-8 font-bold tracking-wider cursor-pointer shadow-md hover:bg-neutral/90 transition-all uppercase"
           >
-            {submitting ? "Saving Entry Log..." : "Submit Progress Report"}
+            {submitting ? t("newReport.submitting") : t("newReport.submitBtn")}
           </button>
         </div>
       </form>

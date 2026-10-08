@@ -1,21 +1,19 @@
 import { useState } from "react";
 import { useMedications } from "@/network/medicationlist";
 import { MedicationListType } from "@/types/medicationType";
-
+import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import { useAuth } from "@/context/useAuth";
 import { PageCard, PageToolbar, ToolbarButton } from "@/components";
 
 export default function MedicationList() {
-  // 2. CONSUME the dynamic authentication session context
   const { user } = useAuth();
+  const { t } = useTranslation(); // Pulls the lookup dictionary execution context function (t)
 
-  // 3. EXTRACT the id safely (handles _id or id depending on the User type shape)
-  //   const userId = user && "_id" in user ? (user._id as string) : "";
   const userId =
     user && "sub" in user
       ? (user.sub as string)
       : (user as any)?.id || (user as any)?._id || "";
-  // 4. PASS the live dynamic userId directly into your custom data hook
+
   const {
     medications,
     loading,
@@ -40,13 +38,13 @@ export default function MedicationList() {
     setIsAllExpanded(false);
   };
 
-  // 5. ENFORCE a protection gate while the session initializes
+  // ENFORCE a protection gate while the session initializes
   if (!userId) {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center p-4 space-y-3">
         <span className="loading loading-spinner loading-md text-primary"></span>
         <p className="text-sm font-medium text-base-content/50 tracking-wide">
-          Verifying user session security...
+          {t("meds.verifyingSession")}
         </p>
       </div>
     );
@@ -55,22 +53,22 @@ export default function MedicationList() {
   return (
     <PageCard>
       <PageToolbar
-        title="Medication List"
+        title={t("meds.toolbarTitle")}
         leading={
           <button
             className="btn btn-xs btn-circle font-black text-sm bg-primary border-none text-white shadow-md transition-all duration-300 hover:scale-110 hover:rotate-90 cursor-pointer"
             onClick={addMedication}
-            title="Add Medication"
+            title={t("meds.addTooltip")}
           >
             +
           </button>
         }
       >
         <ToolbarButton active={isAllExpanded} onClick={handleOpenAll}>
-          Open all
+          {t("meds.openAll")}
         </ToolbarButton>
         <ToolbarButton active={!isAllExpanded} onClick={handleCloseAll}>
-          Close all
+          {t("meds.closeAll")}
         </ToolbarButton>
       </PageToolbar>
 
@@ -81,7 +79,7 @@ export default function MedicationList() {
           <div className="flex flex-col items-center justify-center py-12 space-y-3">
             <span className="loading loading-spinner loading-md text-primary"></span>
             <p className="text-sm font-medium text-base-content/50 tracking-wide">
-              Retrieving medication registry records...
+              {t("meds.loading")}
             </p>
           </div>
         )}
@@ -92,28 +90,26 @@ export default function MedicationList() {
             <div className="text-4xl select-none opacity-40">📋</div>
             <div className="space-y-1">
               <h3 className="font-bold text-base text-base-content tracking-wide">
-                No Medications Registered
+                {t("meds.emptyTitle")}
               </h3>
               <p className="text-xs sm:text-sm text-base-content/60 max-w-sm font-medium">
-                Your current schedule tracker is empty. Click the "+" button in
-                the header above to log your first treatment asset.
+                {t("meds.emptySubtitle")}
               </p>
             </div>
             <button
               onClick={addMedication}
               className="btn btn-sm btn-primary rounded-xl font-bold tracking-wider px-4 cursor-pointer text-white shadow-sm"
             >
-              Create Entry
+              {t("meds.createBtn")}
             </button>
           </div>
         )}
-
         {/* 3. Core Mapping List */}
         {!loading &&
           medications.map((med) => (
             <section
               key={med.id}
-              className={`border transition-all duration-300 rounded-2xl overflow-hidden bg-base-100 ${
+              className={`border transition-all duration-300 rounded-2xl overflow-hidden bg-base-100 text-left ${
                 med.isExpanded
                   ? "border-primary/40 shadow-lg scale-[1.01]"
                   : "border-base-200 hover:border-primary/30 hover:shadow-md"
@@ -138,7 +134,7 @@ export default function MedicationList() {
                       onChange={(e) =>
                         handleInputChange(med.id, "name", e.target.value)
                       }
-                      placeholder="Medication Name"
+                      placeholder={t("meds.namePlaceholder")}
                       className="input input-sm h-10 rounded-xl w-full font-bold focus:outline-primary text-base-content bg-base-100 border border-base-200 px-4 shadow-inner"
                     />
                   ) : (
@@ -153,7 +149,7 @@ export default function MedicationList() {
 
                 {!med.isExpanded && (
                   <span className="badge bg-accent text-base-content font-semibold tracking-wide border-none rounded-lg px-3 py-2.5 text-xs">
-                    {med.dosage || "No Dose"}
+                    {med.dosage || t("meds.noDose")}
                   </span>
                 )}
               </div>
@@ -166,7 +162,7 @@ export default function MedicationList() {
                     <div className="form-control w-full md:col-span-1">
                       <label className="label pt-0 pb-1.5">
                         <span className="label-text font-bold text-xs uppercase tracking-widest text-base-content/65">
-                          Dosage
+                          {t("meds.dosageLabel")}
                         </span>
                       </label>
                       {med.isEditing ? (
@@ -176,14 +172,14 @@ export default function MedicationList() {
                           onChange={(e) =>
                             handleInputChange(med.id, "dosage", e.target.value)
                           }
-                          placeholder="e.g. 20 mg"
+                          placeholder={t("meds.dosagePlaceholder")}
                           className="input rounded-xl w-full bg-base-100 focus:outline-primary text-sm text-base-content border border-base-200 h-10 px-3 shadow-inner"
                         />
                       ) : (
                         <div className="h-10 flex items-center px-4 bg-base-200/40 border border-base-200 rounded-xl font-bold text-base-content/80 text-sm">
                           {med.dosage || (
                             <span className="italic font-normal opacity-40">
-                              Not defined
+                              {t("meds.notDefined")}
                             </span>
                           )}
                         </div>
@@ -194,7 +190,7 @@ export default function MedicationList() {
                     <div className="form-control w-full md:col-span-2">
                       <label className="label pt-0 pb-1.5">
                         <span className="label-text font-bold text-xs uppercase tracking-widest text-base-content/65">
-                          Planned Medical Effect
+                          {t("meds.effectLabel")}
                         </span>
                       </label>
                       {med.isEditing ? (
@@ -204,14 +200,14 @@ export default function MedicationList() {
                           onChange={(e) =>
                             handleInputChange(med.id, "effect", e.target.value)
                           }
-                          placeholder="e.g. Mood stabilization"
+                          placeholder={t("meds.effectPlaceholder")}
                           className="input rounded-xl w-full bg-base-100 focus:outline-primary text-sm text-base-content border border-base-200 h-10 px-3 shadow-inner"
                         />
                       ) : (
                         <div className="h-10 flex items-center px-4 bg-base-200/40 border border-base-200 rounded-xl font-medium text-base-content/80 text-sm">
                           {med.effect || (
                             <span className="italic opacity-40 font-normal">
-                              No target effect specified
+                              {t("meds.noEffect")}
                             </span>
                           )}
                         </div>
@@ -224,8 +220,8 @@ export default function MedicationList() {
                     <label className="label pt-0 pb-3">
                       <span className="label-text font-bold text-xs uppercase tracking-widest text-base-content/70">
                         {med.isEditing
-                          ? "Schedule Configuration (Select Active Slots)"
-                          : "Active Intake Slots"}
+                          ? t("meds.scheduleEditTitle")
+                          : t("meds.scheduleViewTitle")}
                       </span>
                     </label>
                     <div className="flex flex-wrap gap-6 items-center">
@@ -238,7 +234,7 @@ export default function MedicationList() {
                         return (
                           <label
                             key={slot}
-                            className={`flex items-center gap-2 select-none text-sm font-semibold capitalize ${
+                            className={`flex items-center gap-2 select-none text-sm font-semibold ${
                               med.isEditing
                                 ? "cursor-pointer"
                                 : "pointer-events-none"
@@ -253,7 +249,7 @@ export default function MedicationList() {
                               }
                               className="checkbox checkbox-primary checkbox-sm rounded-md transition-all"
                             />
-                            <span>{slot}</span>
+                            <span>{t(`meds.slots.${slot}`)}</span>
                           </label>
                         );
                       })}
@@ -270,13 +266,13 @@ export default function MedicationList() {
                           : "bg-base-200 text-base-content border-base-300 hover:bg-base-300"
                       }`}
                     >
-                      {med.isEditing ? "SAVE" : "EDIT"}
+                      {med.isEditing ? t("meds.saveBtn") : t("meds.editBtn")}
                     </button>
                     <button
                       onClick={() => deleteMedication(med.id)}
                       className="btn btn-sm btn-ghost text-error font-bold tracking-wider hover:bg-error/10 rounded-xl px-4 cursor-pointer"
                     >
-                      DELETE
+                      {t("meds.deleteBtn")}
                     </button>
                   </div>
                 </div>
