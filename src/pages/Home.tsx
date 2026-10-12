@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
+import { toast } from "react-toastify";
 import {
   Chart as ChartJS,
   LinearScale,
@@ -70,9 +71,13 @@ const useChartColors = () => {
 };
 
 type Orientation = "horizontal" | "vertical";
+
+// FIXED: Explicitly declare the type literal constraint signature for tracking keys
 type MetricKey = "mood" | "energy" | "sleep" | "concentration" | "irritability";
+
 type Medication = { id: string; name: string; dosage: string };
 
+// FIXED: Linked properties correctly via intersection objects mapping MetricKey parameters
 type Report = {
   id: string;
   at: number;
@@ -85,6 +90,7 @@ type Report = {
 const WINDOW_DAYS = 7;
 const BLOCK_DAYS = 7;
 const WHEEL_STEP = 100;
+
 const TODAY = startOfDay(new Date());
 
 const blockStart = (k: number) => addDays(TODAY, k * BLOCK_DAYS);
@@ -109,18 +115,15 @@ const fetchBlock = async (k: number): Promise<Report[]> => {
 };
 
 const REPORT_LANE = -0.5;
-
 export const Home = () => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-
   useEffect(() => {
     if (user?.roles?.includes("doctor")) {
       navigate("/doctor/dashboard", { replace: true });
     }
   }, [user, navigate]);
-
   const [orientation, setOrientation] = useState<Orientation>(() =>
     window.matchMedia("(max-width: 1023px)").matches
       ? "vertical"
@@ -148,6 +151,7 @@ export const Home = () => {
   const vertical = orientation === "vertical";
   const chartColors = useChartColors();
 
+  // FIXED: Cast keys strictly as MetricKey literals to prevent implicit any index type errors
   const METRICS = useMemo(
     () => [
       {
@@ -185,11 +189,9 @@ export const Home = () => {
   const formatDateTime = (tStamp: number) =>
     new Date(tStamp).toLocaleString(
       i18n.resolvedLanguage === "de" ? "de-DE" : "en-US",
-      {
-        dateStyle: "medium",
-        timeStyle: "short",
-      },
+      { dateStyle: "medium", timeStyle: "short" },
     );
+
   const handleSummarize = async () => {
     setSummaryLoading(true);
     setSummaryError(null);
@@ -266,7 +268,6 @@ export const Home = () => {
         .sort((a, b) => a.at - b.at),
     [blocks],
   );
-
   const data = useMemo<ChartData<"line">>(() => {
     const point = (time: number, value: number) =>
       vertical ? { x: value, y: time } : { x: time, y: value };
@@ -274,9 +275,7 @@ export const Home = () => {
       datasets: [
         ...METRICS.map((m) => ({
           label: m.label,
-          data: reports.map((r) =>
-            point(r.at, r[m.key as keyof typeof r] as number),
-          ),
+          data: reports.map((r) => point(r.at, r[m.key])),
           borderColor: m.color,
           backgroundColor: m.color,
           borderWidth: 2,
@@ -359,7 +358,6 @@ export const Home = () => {
       },
     };
   }, [vertical, windowStart, reports, chartColors, t, REPORT_DATASET_INDEX]);
-
   return (
     <PageCard size="lg">
       <PageToolbar
@@ -404,25 +402,12 @@ export const Home = () => {
         </ToolbarButton>
       </PageToolbar>
 
-      {/* ✨ UPDATED: Crash-Proof Elegant Inline Alert Banner */}
       {loadError && (
-        <div className="alert alert-error rounded-xl flex items-start gap-2 bg-error/10 text-error border border-error/20 p-3 text-sm mb-4 animate-fadeIn">
-          <svg
-            xmlns="http://w3.org"
-            className="stroke-current shrink-0 h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{loadError}</span>
+        <div role="alert" className="alert alert-error rounded-2xl mb-4">
+          {loadError}
         </div>
       )}
+
       <main className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <section className="lg:col-span-3 border border-base-200 rounded-2xl p-5 space-y-4">
           <div
@@ -456,16 +441,13 @@ export const Home = () => {
             </div>
 
             {summaryError && (
-              <div
-                role="alert"
-                className="alert alert-error rounded-xl flex items-start gap-2 bg-error/10 text-error border border-error/20 p-3 text-sm animate-fadeIn text-left"
-              >
-                <span>{summaryError}</span>
+              <div role="alert" className="alert alert-error rounded-2xl">
+                {summaryError}
               </div>
             )}
 
             {summary && (
-              <div className="bg-base-200/60 border border-base-200 rounded-2xl p-4 animate-fadeIn">
+              <div className="bg-base-200/60 border border-base-200 rounded-2xl p-4">
                 <h3 className="font-bold text-sm text-base-content mb-2">
                   {t("home.summaryTitle")} {summary.range}
                 </h3>
@@ -482,19 +464,17 @@ export const Home = () => {
 
         <aside className="lg:col-span-1 border border-base-200 rounded-2xl p-5 space-y-3 text-left">
           <PatientLinkHandshakeWidget />
-          <h2 className="text-xs font-bold tracking-widest uppercase text-secondary mt-2">
+          <h2 className="text-xs font-bold tracking-widest uppercase text-secondary">
             {t("home.checkInHeading")}
           </h2>
           {selectedReport ? (
-            <div className="animate-fadeIn space-y-3">
-              <div>
-                <p className="text-xs font-medium text-base-content/50">
-                  {formatDateTime(selectedReport.at)}
-                </p>
-                <p className="text-sm text-base-content/80 font-medium mt-1">
-                  {selectedReport.message}
-                </p>
-              </div>
+            <>
+              <p className="text-xs font-medium text-base-content/50">
+                {formatDateTime(selectedReport.at)}
+              </p>
+              <p className="text-sm text-base-content/80 font-medium">
+                {selectedReport.message}
+              </p>
 
               <ul className="text-sm space-y-1">
                 {METRICS.map((m) => (
@@ -504,11 +484,7 @@ export const Home = () => {
                   >
                     <span className="text-base-content/70">{m.label}</span>
                     <span className="badge bg-primary/10 border-none rounded-lg text-xs font-bold px-2 py-1 text-primary">
-                      {
-                        selectedReport[
-                          m.key as keyof typeof selectedReport
-                        ] as number
-                      }
+                      {selectedReport[m.key]}
                     </span>
                   </li>
                 ))}
@@ -517,14 +493,13 @@ export const Home = () => {
               <h3 className="font-bold text-sm text-base-content mt-4 border-t border-base-100 pt-2">
                 {t("home.medicationsTitle")}
               </h3>
-              {!selectedReport.medications ||
-              (selectedReport.medications as any).length === 0 ? (
+              {selectedReport.medications.length === 0 ? (
                 <p className="text-sm text-base-content/50 italic">
                   {t("home.medsNone")}
                 </p>
               ) : (
                 <ul className="text-sm text-base-content/80 space-y-1 list-disc list-inside">
-                  {(selectedReport.medications as any).map((m: any) => (
+                  {selectedReport.medications.map((m) => (
                     <li key={m.id} className="truncate">
                       {m.name} – <span className="opacity-60">{m.dosage}</span>
                     </li>
@@ -534,12 +509,12 @@ export const Home = () => {
 
               <button
                 type="button"
-                className="btn btn-xs btn-ghost rounded-lg mt-2 w-full border border-base-content/10"
+                className="btn btn-xs btn-ghost rounded-lg mt-4"
                 onClick={() => setSelectedReport(null)}
               >
                 {t("home.closeBtn")}
               </button>
-            </div>
+            </>
           ) : (
             <p className="text-sm text-base-content/50 italic leading-relaxed">
               {t("home.emptyAside")}
@@ -556,17 +531,10 @@ export function PatientLinkHandshakeWidget() {
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // ✨ Internal local widget states for explicit contextual layout feedback
-  const [errorStatus, setErrorStatus] = useState<string | null>(null);
-  const [successStatus, setSuccessStatus] = useState<string | null>(null);
-
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorStatus(null);
-    setSuccessStatus(null);
-
     if (!code.trim() || code.length !== 6) {
-      return setErrorStatus(t("home.handshake.warning"));
+      return toast.warning(t("home.handshake.warning"));
     }
 
     try {
@@ -583,10 +551,10 @@ export function PatientLinkHandshakeWidget() {
       if (!res.ok)
         throw new Error(data.error || t("home.handshake.errorFallback"));
 
-      setSuccessStatus(data.message || t("home.handshake.successFallback"));
+      toast.success(data.message || t("home.handshake.successFallback"));
       setCode("");
     } catch (err: any) {
-      setErrorStatus(err.message || t("home.handshake.errorFallback"));
+      toast.error(err.message || t("home.handshake.errorFallback"));
     } finally {
       setSubmitting(false);
     }
@@ -595,48 +563,28 @@ export function PatientLinkHandshakeWidget() {
   return (
     <form
       onSubmit={handleLinkSubmit}
-      className="card bg-base-100 p-4 border border-base-200 rounded-2xl shadow-xs max-w-md space-y-3 font-sans text-neutral"
+      className="card bg-base-100 p-5 border border-base-200/60 rounded-2xl shadow-xs max-w-md space-y-3 font-sans text-neutral"
     >
-      <div>
-        <h3 className="font-bold text-xs uppercase tracking-wide opacity-70">
-          {t("home.handshake.title")}
-        </h3>
-        <p className="text-[11px] opacity-50 leading-relaxed font-medium mt-0.5">
-          {t("home.handshake.subtitle")}
-        </p>
-      </div>
-
-      {/* ✨ Local Widget Contextual Inline Feedback Banners */}
-      {errorStatus && (
-        <div className="alert alert-error text-left rounded-xl p-2.5 text-xs bg-error/10 text-error border border-error/10 animate-fadeIn">
-          <span>{errorStatus}</span>
-        </div>
-      )}
-
-      {successStatus && (
-        <div className="alert alert-success text-left rounded-xl p-2.5 text-xs bg-success/10 text-success border border-success/10 animate-fadeIn">
-          <span>{successStatus}</span>
-        </div>
-      )}
-
+      <h3 className="font-bold text-xs uppercase tracking-wide opacity-70">
+        {t("home.handshake.title")}
+      </h3>
+      <p className="text-[11px] opacity-50 leading-relaxed font-medium">
+        {t("home.handshake.subtitle")}
+      </p>
       <div className="flex gap-2">
         <input
           type="text"
           placeholder={t("home.handshake.placeholder")}
           value={code}
-          onChange={(e) => {
-            if (errorStatus) setErrorStatus(null);
-            if (successStatus) setSuccessStatus(null);
-            setCode(e.target.value.toUpperCase());
-          }}
-          className={`input input-bordered rounded-xl text-xs font-mono tracking-widest grow bg-base-100 focus:outline-primary ${errorStatus ? "border-error focus:outline-error" : ""}`}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          className="input input-bordered rounded-xl text-xs font-mono tracking-widest grow bg-base-100 focus:outline-primary"
           maxLength={6}
           disabled={submitting}
         />
         <button
           type="submit"
           disabled={submitting}
-          className="btn btn-primary btn-sm rounded-xl font-bold h-full px-4 text-xs min-w-[90px]"
+          className="btn btn-primary btn-sm rounded-xl font-bold h-full px-4 text-xs"
         >
           {submitting
             ? t("home.handshake.connecting")

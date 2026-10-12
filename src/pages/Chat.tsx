@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
+import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import type { ChatMessage, Contact } from "@/types";
 import { PageCard, PageToolbar } from "@/components";
@@ -17,20 +18,15 @@ export default function Chat() {
   const [activeContact, setActiveContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [typedMessage, setTypedMessage] = useState("");
-
-  // State indicators replacing legacy popups
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingChat, setLoadingChat] = useState(false);
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // 1. Fetch available contact index entries on mount
+  // 1. Fetch available connected contact index cards on initialization mount
   useEffect(() => {
     if (!currentUserId) return;
     setLoadingContacts(true);
-    setChatError(null);
 
     const lookupPath = isDoctor ? "/doctor/doctor/patients" : "/auth/me";
 
@@ -39,11 +35,7 @@ export default function Chat() {
         headers: { Authorization: `Bearer ${getAccessToken()}` },
       })
       .then((res) => {
-        if (!res.ok)
-          throw new Error(
-            t("chat.loadHistoryError") ||
-              "Failed to sync system contacts ledger.",
-          );
+        if (!res.ok) throw new Error(t("chat.loadHistoryError"));
         return res.json();
       })
       .then((data: any) => {
@@ -56,13 +48,19 @@ export default function Chat() {
             })),
           );
         } else {
-          if (data?.user?.connectedUsers?.length > 0) {
+          if (
+            data &&
+            data.user &&
+            data.user.connectedUsers &&
+            data.user.connectedUsers.length > 0
+          ) {
             const normalizedContacts = data.user.connectedUsers.map(
               (contact: any) => {
                 const resolvedId =
                   typeof contact === "string"
                     ? contact
                     : contact._id || contact.id || "";
+
                 return {
                   ...(typeof contact === "object" ? contact : {}),
                   _id: resolvedId,
@@ -74,32 +72,28 @@ export default function Chat() {
                 };
               },
             );
+
             setContacts(normalizedContacts.filter((c: any) => c._id !== ""));
           } else {
             setContacts([]);
           }
         }
       })
-      .catch((err) => setChatError(err.message))
+      .catch((err) => toast.error(err.message || t("chat.sidebarHeader")))
       .finally(() => setLoadingContacts(false));
   }, [currentUserId, isDoctor, t]);
 
-  // 2. Load historic chat thread data logs
+  // 2. Fetch linear chronological conversation logs when a contact card profile is clicked
   useEffect(() => {
     if (!activeContact) return;
     setLoadingChat(true);
-    setChatError(null);
 
     window
       .fetch(`${VITE_API_URL}/chat/history/${activeContact._id}`, {
         headers: { Authorization: `Bearer ${getAccessToken()}` },
       })
       .then((res) => {
-        if (!res.ok)
-          throw new Error(
-            t("chat.loadHistoryError") ||
-              "Could not retrieve message history threads.",
-          );
+        if (!res.ok) throw new Error(t("chat.loadHistoryError"));
         return res.json();
       })
       .then((data) => {
@@ -109,19 +103,16 @@ export default function Chat() {
           60,
         );
       })
-      .catch((err) => setChatError(err.message))
+      .catch((err) => toast.error(err.message))
       .finally(() => setLoadingChat(false));
   }, [activeContact, t]);
 
-  // 3. Dispatch new secure message strings
+  // 3. Dispatch a new message text string to the backend API route validation gateways
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!typedMessage.trim() || !activeContact || sendingMessage) return;
+    if (!typedMessage.trim() || !activeContact) return;
 
     try {
-      setSendingMessage(true);
-      setChatError(null);
-
       const res = await window.fetch(`${VITE_API_URL}/chat/send`, {
         method: "POST",
         headers: {
@@ -135,10 +126,7 @@ export default function Chat() {
       });
 
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(
-          data.error || t("chat.sendError") || "Message dispatch anomaly.",
-        );
+      if (!res.ok) throw new Error(data.error || "Message dispatch anomaly.");
 
       setMessages((prev) => [...prev, data]);
       setTypedMessage("");
@@ -147,9 +135,7 @@ export default function Chat() {
         60,
       );
     } catch (err: any) {
-      setChatError(err.message);
-    } finally {
-      setSendingMessage(false);
+      toast.error(err.message || t("chat.sendError"));
     }
   };
   return (
@@ -164,29 +150,6 @@ export default function Chat() {
           )
         }
       />
-
-      {/* Dynamic Inline Feedback Banner Box */}
-      {chatError && (
-        <div
-          role="alert"
-          className="alert alert-error rounded-xl flex items-start gap-2 bg-error/10 text-error border border-error/20 p-3 text-sm text-left mb-4 animate-fadeIn"
-        >
-          <svg
-            xmlns="http://w3.org"
-            className="stroke-current shrink-0 h-5 w-5 mt-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{chatError}</span>
-        </div>
-      )}
 
       <main className="grid grid-cols-1 md:grid-cols-3 md:h-[65vh] border border-base-content/10 rounded-2xl overflow-hidden">
         {/* LEFT COLUMN SIDEBAR: Channels Directory */}
@@ -208,6 +171,7 @@ export default function Chat() {
               contacts.map((contact, index) => {
                 const dynamicContactId = contact._id || contact.id || "";
                 const uniqueKey = dynamicContactId || `contact-key-${index}`;
+
                 const displayRoleLabel = isDoctor
                   ? t("chat.patientLabel")
                   : t("chat.doctorLabel");
@@ -217,14 +181,13 @@ export default function Chat() {
                     key={uniqueKey}
                     onClick={() => {
                       if (dynamicContactId) {
-                        setChatError(null);
-                        setActiveContact({ ...contact, _id: dynamicContactId });
+                        setActiveContact({
+                          ...contact,
+                          _id: dynamicContactId,
+                        });
                         setTypedMessage("");
                       } else {
-                        setChatError(
-                          t("chat.invalidContact") ||
-                            "Selected contact missing active account routing keys.",
-                        );
+                        toast.error(t("chat.invalidContact"));
                       }
                     }}
                     className={`p-3 rounded-xl cursor-pointer transition-all border text-left select-none ${
@@ -275,7 +238,7 @@ export default function Chat() {
                     return (
                       <div
                         key={msg._id}
-                        className={`chat ${isMyMessage ? "chat-end" : "chat-start"} animate-fadeIn`}
+                        className={`chat ${isMyMessage ? "chat-end" : "chat-start"}`}
                       >
                         <div
                           className={`chat-bubble text-xs rounded-2xl p-3 max-w-xs sm:max-w-md leading-relaxed font-medium ${
@@ -311,26 +274,17 @@ export default function Chat() {
                 <input
                   type="text"
                   value={typedMessage}
-                  onChange={(e) => {
-                    if (chatError) setChatError(null);
-                    setTypedMessage(e.target.value);
-                  }}
+                  onChange={(e) => setTypedMessage(e.target.value)}
                   placeholder={t("chat.placeholder")}
                   className="input input-bordered input-sm rounded-xl text-xs grow bg-base-100 border-base-content/20 focus:outline-primary placeholder:text-base-content/40 placeholder:opacity-50"
-                  disabled={loadingChat || sendingMessage}
+                  disabled={loadingChat}
                 />
                 <button
                   type="submit"
-                  disabled={
-                    loadingChat || sendingMessage || !typedMessage.trim()
-                  }
-                  className={`btn btn-primary btn-sm rounded-xl font-bold px-5 text-xs text-white ${sendingMessage ? "btn-disabled opacity-70" : ""}`}
+                  disabled={loadingChat || !typedMessage.trim()}
+                  className="btn btn-primary btn-sm rounded-xl font-bold px-5 text-xs text-white"
                 >
-                  {sendingMessage ? (
-                    <span className="loading loading-spinner loading-xs"></span>
-                  ) : (
-                    t("chat.send")
-                  )}
+                  {t("chat.send")}
                 </button>
               </form>
             </>

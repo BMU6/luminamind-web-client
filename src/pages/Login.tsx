@@ -1,127 +1,53 @@
-import { useState, useEffect } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router";
-import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { Link, Navigate, useLocation } from "react-router";
+import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import type { LoginData } from "@/types";
 import { useAuth } from "@/context";
 import { PageCard, PageToolbar } from "@/components";
 
 const Login = () => {
   const { signedIn, handleSignIn, user } = useAuth();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const { t } = useTranslation(); // Pulls the lookup dictionary hook handles
 
+  // ProtectedRoute stores the page the user wanted in location.state.from
   const from = useLocation().state?.from?.pathname ?? "/";
   const [{ email, password }, setForm] = useState<LoginData>({
     email: "",
     password: "",
   });
-
   const [loading, setLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
 
-  // ✨ Delayed redirection hook to let the user read the success message
-  useEffect(() => {
-    if (isSuccess && signedIn) {
-      const timer = setTimeout(() => {
-        if (user?.roles?.includes("doctor")) {
-          navigate("/doctor/dashboard", { replace: true });
-        } else {
-          navigate(from, { replace: true });
-        }
-      }, 1500); // 1.5 seconds delay
-
-      return () => clearTimeout(timer);
-    }
-  }, [isSuccess, signedIn, user, from, navigate]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (formError) setFormError(null);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       if (!email || !password) throw new Error(t("login.requiredError"));
       setLoading(true);
-      setFormError(null);
 
       await handleSignIn({ email, password });
-      setIsSuccess(true);
+      toast.success(t("login.successMessage"));
     } catch (error: unknown) {
       const message = (error as { message: string }).message;
-      setFormError(message);
+      toast.error(message);
+    } finally {
       setLoading(false);
     }
   };
 
-  // ⚠️ Modified conditional: Don't redirect immediately if we are displaying the success transition animation
-  if (signedIn && !isSuccess) {
+  if (signedIn) {
     if (user?.roles?.includes("doctor")) {
       return <Navigate to="/doctor/dashboard" replace />;
     }
     return <Navigate to={from} replace />;
-  }
-
-  return (
-    <PageCard size="sm">
-      <PageToolbar title={t("login.title")} />
-
-      {/* ✨ Refactored layout conditional: Swaps form context for a clean success card */}
-      {isSuccess ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-8 text-center animate-fadeIn">
-          <div className="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center border border-success/20 shadow-inner">
-            <svg
-              xmlns="http://w3.org"
-              className="h-8 w-8 stroke-current"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-bold text-xl text-base-content">
-              {t("login.successMessage")}
-            </h3>
-            <p className="text-sm text-base-content/60">
-              Loading your workspace layout...
-            </p>
-          </div>
-          <div className="loading loading-dots loading-md text-primary mt-2"></div>
-        </div>
-      ) : (
+  } else {
+    return (
+      <PageCard size="sm">
+        <PageToolbar title={t("login.title")} />
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          {formError && (
-            <div className="alert alert-error rounded-xl flex items-start gap-2 bg-error/10 text-error border border-error/20 p-3 text-sm animate-fadeIn">
-              <svg
-                xmlns="http://w3.org"
-                className="stroke-current shrink-0 h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>{formError}</span>
-            </div>
-          )}
-
-          <label
-            className={`input rounded-xl w-full flex items-center gap-2 border bg-base-100 focus-within:border-primary ${
-              formError ? "border-error" : "border-base-content/30"
-            }`}
-          >
+          <label className="input rounded-xl w-full flex items-center gap-2 border border-base-content/30 bg-base-100 focus-within:border-primary">
             <svg
               xmlns="http://w3.org"
               viewBox="0 0 16 16"
@@ -140,12 +66,7 @@ const Login = () => {
               placeholder={t("login.emailPlaceholder")}
             />
           </label>
-
-          <label
-            className={`input rounded-xl w-full flex items-center gap-2 border bg-base-100 focus-within:border-primary ${
-              formError ? "border-error" : "border-base-content/30"
-            }`}
-          >
+          <label className="input rounded-xl w-full flex items-center gap-2 border border-base-content/30 bg-base-100 focus-within:border-primary">
             <svg
               xmlns="http://w3.org"
               viewBox="0 0 16 16"
@@ -167,18 +88,14 @@ const Login = () => {
               placeholder={t("login.passwordPlaceholder")}
             />
           </label>
-
           <small>
             {t("login.noAccountPrompt")}{" "}
             <Link to="/register" className="text-primary hover:underline">
               {t("login.registerLink")}
             </Link>
           </small>
-
           <button
-            className={`btn btn-primary self-center rounded-xl px-8 min-w-[120px] ${
-              loading ? "btn-disabled opacity-70" : ""
-            }`}
+            className="btn btn-primary self-center rounded-xl px-8"
             disabled={loading}
           >
             {loading ? (
@@ -188,9 +105,9 @@ const Login = () => {
             )}
           </button>
         </form>
-      )}
-    </PageCard>
-  );
+      </PageCard>
+    );
+  }
 };
 
 export default Login;

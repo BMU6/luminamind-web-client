@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/context/useAuth";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import { PageCard, PageToolbar, ToolbarButton } from "@/components";
-import { VITE_API_URL } from "@/config";
-import { getAccessToken } from "@/storage";
 
 export default function NewReportForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation(); // Pulls the lookup translation handles
 
-  const userId = user?.id || (user as any)?._id || "";
+  const userId =
+    user && "sub" in user
+      ? (user.sub as string)
+      : (user as any)?.id || (user as any)?._id || "";
 
-  // Core Clinical Metric States
+  // 1. Core Clinical Metric Sliders State
   const [mood, setMood] = useState<number>(3);
   const [irritability, setIrritability] = useState<number>(0);
   const [energy, setEnergy] = useState<number>(3);
@@ -21,38 +22,25 @@ export default function NewReportForm() {
   const [concentration, setConcentration] = useState<number>(3);
   const [message, setMessage] = useState<string>("");
 
-  // UI Flow Parameters
+  // 2. Active Medications State parameters
   const [availableMeds, setAvailableMeds] = useState<any[]>([]);
   const [loadingMeds, setLoadingMeds] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  // ✨ FIXED: Added dynamic configuration URLs and attached strict Authorization Bearer keys
+  // 3. Auto-populate current treatments on mount
   useEffect(() => {
     if (!userId) return;
-    setLoadingMeds(true);
-    fetch(`${VITE_API_URL}/medicationlist`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getAccessToken()}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to authenticate session token.");
-        return res.json();
-      })
+    fetch(`http://localhost:3000/medicationlist`)
+      .then((res) => res.json())
       .then((data) => setAvailableMeds(Array.isArray(data) ? data : []))
       .catch((err) =>
-        console.error("Error pre-populating active medications:", err),
+        console.error("Error pre-populating active medications payload:", err),
       )
       .finally(() => setLoadingMeds(false));
   }, [userId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmissionError(null);
-
     try {
       setSubmitting(true);
 
@@ -62,13 +50,9 @@ export default function NewReportForm() {
         dosage: m.dosage,
       }));
 
-      // ✨ FIXED: Integrated token signatures and active error state catchers for form actions
-      const response = await fetch(`${VITE_API_URL}/reports`, {
+      const response = await fetch("http://localhost:3000/reports", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mood,
           irritability,
@@ -80,27 +64,27 @@ export default function NewReportForm() {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            t("newReport.submitErrorFallback") ||
-            "Failed committing report metrics log.",
-        );
-      }
+      if (!response.ok)
+        throw new Error("Failed committing progress metrics log.");
 
       navigate("/reports");
-    } catch (err: unknown) {
+    } catch (err) {
       console.error(err);
-      setSubmissionError(
-        err instanceof Error
-          ? err.message
-          : "An unexpected submission error occurred.",
-      );
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-base-200 flex flex-col justify-center items-center p-4">
+        <span className="loading loading-spinner loading-md text-primary"></span>
+        <p className="ml-3 text-sm font-medium text-base-content/50">
+          {t("newReport.verifyingSession")}
+        </p>
+      </div>
+    );
+  }
 
   const isGermanActive = i18n.resolvedLanguage === "de";
 
@@ -166,32 +150,9 @@ export default function NewReportForm() {
         </ToolbarButton>
       </PageToolbar>
 
-      {/* Dynamic Inline Feedback Banner Box */}
-      {submissionError && (
-        <div
-          role="alert"
-          className="alert alert-error rounded-xl flex items-start gap-2 bg-error/10 text-error border border-error/20 p-3 text-sm text-left animate-fadeIn"
-        >
-          <svg
-            xmlns="http://w3.org"
-            className="stroke-current shrink-0 h-5 w-5 mt-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{submissionError}</span>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Automated Medication Treatment Snapshot Display */}
-        <div className="bg-base-200/40 p-4 rounded-xl border border-base-200 space-y-2 text-left">
+        {/* Automated Medication Treatment Snapshot Badge Display */}
+        <div className="bg-base-200/40 p-4 rounded-xl border border-base-200 space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
             {t("newReport.snapshotTitle")}
           </span>
@@ -203,7 +164,7 @@ export default function NewReportForm() {
                 {t("newReport.noMeds")}
               </span>
             ) : (
-              availableMeds.map((m: any) => (
+              availableMeds.map((m) => (
                 <span
                   key={m.id || m._id}
                   className="badge bg-primary/10 border border-primary/20 text-base-content text-xs font-semibold px-3 py-2.5 rounded-lg shadow-sm"
@@ -215,29 +176,27 @@ export default function NewReportForm() {
           </div>
         </div>
 
-        {/* Notes Log Input Fields */}
-        <div className="form-control space-y-1.5 text-left">
+        {/* Notes Log Message Fields */}
+        <div className="form-control space-y-1.5">
           <label className="text-xs font-bold uppercase tracking-widest text-base-content/60 block">
             {t("newReport.notesLabel")}
           </label>
           <textarea
             value={message}
-            onChange={(e) => {
-              if (submissionError) setSubmissionError(null);
-              setMessage(e.target.value);
-            }}
+            onChange={(e) => setMessage(e.target.value)}
             placeholder={t("newReport.notesPlaceholder")}
             className="textarea textarea-bordered rounded-2xl text-sm focus:outline-primary shadow-inner h-24 p-4 border-base-200 bg-base-100 w-full"
           />
         </div>
 
-        {/* 5-Metric Dynamic Matrix */}
+        {/* 5-Metric Dynamic Color-Shifting Radio Button Matrix */}
         <div className="space-y-6">
           {METRIC_CONFIGS.map((item) => (
             <div
               key={item.label}
-              className="p-5 border border-base-200 bg-base-200/10 rounded-2xl space-y-3 shadow-inner text-left"
+              className="p-5 border border-base-200 bg-base-200/10 rounded-2xl space-y-3 shadow-inner"
             >
+              {/* Metric Label and Active Selection Badge */}
               <div className="flex justify-between items-center">
                 <span className="font-bold text-xs uppercase tracking-widest text-base-content/70">
                   {item.label}
@@ -247,29 +206,41 @@ export default function NewReportForm() {
                 </span>
               </div>
 
+              {/* Horizontal Radio Inputs Row Container */}
               <div className="flex justify-between items-center bg-base-100 p-3 rounded-xl border border-base-200 gap-2">
                 {[0, 1, 2, 3, 4, 5].map((score) => {
                   const isSelected = item.state === score;
+
+                  // Unselected fallback look and feel classes
                   let activeStyles =
                     "bg-base-200/40 text-base-content/50 border-base-200/20 hover:bg-base-200 hover:text-base-content hover:border-base-300";
 
+                  // Apply static, unpurgeable classes explicitly when selected
                   if (isSelected) {
                     if (
                       item.label === t("newReport.metrics.irritability.label")
                     ) {
-                      activeStyles =
-                        score <= 1
-                          ? "bg-emerald-600 border-emerald-600 text-white font-black shadow-md scale-105"
-                          : score <= 3
-                            ? "bg-amber-500 border-amber-500 text-white font-black shadow-md scale-105"
-                            : "bg-rose-600 border-rose-600 text-white font-black shadow-md scale-105";
+                      // High is BAD (e.g., Irritability turning red)
+                      if (score <= 1)
+                        activeStyles =
+                          "bg-emerald-600 border-emerald-600 text-white font-black shadow-md scale-105";
+                      else if (score <= 3)
+                        activeStyles =
+                          "bg-amber-500 border-amber-500 text-white font-black shadow-md scale-105";
+                      else
+                        activeStyles =
+                          "bg-rose-600 border-rose-600 text-white font-black shadow-md scale-105";
                     } else {
-                      activeStyles =
-                        score <= 1
-                          ? "bg-rose-600 border-rose-600 text-white font-black shadow-md scale-105"
-                          : score <= 3
-                            ? "bg-amber-500 border-amber-500 text-white font-black shadow-md scale-105"
-                            : "bg-emerald-600 border-emerald-600 text-white font-black shadow-md scale-105";
+                      // High is GOOD (e.g., Mood, Energy, Sleep, Concentration turning green)
+                      if (score <= 1)
+                        activeStyles =
+                          "bg-rose-600 border-rose-600 text-white font-black shadow-md scale-105";
+                      else if (score <= 3)
+                        activeStyles =
+                          "bg-amber-500 border-amber-500 text-white font-black shadow-md scale-105";
+                      else
+                        activeStyles =
+                          "bg-emerald-600 border-emerald-600 text-white font-black shadow-md scale-105";
                     }
                   }
 
@@ -283,10 +254,7 @@ export default function NewReportForm() {
                         name={`radio-${item.label}`}
                         value={score}
                         checked={isSelected}
-                        onChange={() => {
-                          if (submissionError) setSubmissionError(null);
-                          item.setter(score);
-                        }}
+                        onChange={() => item.setter(score)}
                         className="sr-only"
                       />
                       <span className="text-sm font-bold tracking-wide">
@@ -297,6 +265,7 @@ export default function NewReportForm() {
                 })}
               </div>
 
+              {/* Contextual Boundary Anchors Text Help Line */}
               <div className="flex justify-between text-[10px] font-bold text-base-content/40 px-1 uppercase tracking-wider select-none">
                 <span>{item.left}</span>
                 <span>{item.right}</span>
@@ -305,18 +274,14 @@ export default function NewReportForm() {
           ))}
         </div>
 
-        {/* Submission Panel Control Footer */}
+        {/* Submission Operational Bar */}
         <div className="flex justify-end pt-4 border-t border-base-200">
           <button
             type="submit"
             disabled={submitting}
-            className={`btn btn-md btn-neutral text-white rounded-xl px-8 font-bold tracking-wider shadow-md hover:bg-neutral/90 transition-all uppercase ${submitting ? "btn-disabled opacity-60" : ""}`}
+            className="btn btn-md btn-neutral text-white rounded-xl px-8 font-bold tracking-wider cursor-pointer shadow-md hover:bg-neutral/90 transition-all uppercase"
           >
-            {submitting ? (
-              <span className="loading loading-spinner loading-xs"></span>
-            ) : (
-              t("newReport.submitBtn")
-            )}
+            {submitting ? t("newReport.submitting") : t("newReport.submitBtn")}
           </button>
         </div>
       </form>

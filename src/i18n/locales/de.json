@@ -203,7 +203,7 @@
     "btnCreate": "Code-Token erstellen",
     "timelineAnalysisView": "Klinische Zeitlinien-Analyseansicht",
     "activeLabel": "Aktiv",
-    "aiHeader": "KI Patient klinische Einblicke",
+    "aiHeader": "Ollama Lokale klinische Einblicke (Llama 3.1:8b)",
     "aiCompiling": "Kontext-Metrikhistorie wird vollständig offline zusammengestellt...",
     "aiEmpty": "Für diesen aktiven Arbeitsbereich wurden noch keine Hintergrundprotokoll-Analysen aufgezeichnet.",
     "chartHeading": "Longitudinale visuelle Matrix",
