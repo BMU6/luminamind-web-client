@@ -1,2 +1,94 @@
 @import "tailwindcss";
-@plugin "daisyui";
+
+/* Besides our own themes (below) we offer the two standard daisyUI themes */
+@plugin "daisyui" {
+  themes: light, dark;
+}
+
+/* LuminaMind light theme (default when the system is light) */
+@plugin "daisyui/theme" {
+  name: "luminamind-light";
+  default: true;
+  color-scheme: light;
+
+  /* Primary Action Accents (e.g. Save, Success) */
+  --color-primary: #26a69a;
+
+  /* Secondary Links and Chevron highlights */
+  --color-secondary: #00bcd4;
+
+  /* Badges and active subtle selection boxes (Mint/Ice tint) */
+  --color-accent: #b2dfdb;
+
+  /* Deep Teal color */
+  --color-neutral: #0f4950;
+
+  /* Clinical surface base colors (Anti-pale crisp white surfaces) */
+  --color-base-100: #ffffff;
+  --color-base-200: #f4f7f6; /* Clinical Fog background tint */
+  /* Text colour. All "base-content/xx" classes (hover colours, borders, soft boxes) are made from it */
+  --color-base-content: #1a2b30;
+
+  /* Status colours. Without them "text-error", "badge-error" and so on have no colour at all. */
+  --color-error: #d03a4f;
+  --color-error-content: #ffffff;
+  --color-success: #2e9e6f;
+  --color-success-content: #ffffff;
+  --color-warning: #e0a030;
+  --color-warning-content: #2b2008;
+  --color-info: #2b9bd1;
+  --color-info-content: #ffffff;
+}
+
+/* LuminaMind dark theme (used when the system is dark) */
+@plugin "daisyui/theme" {
+  name: "luminamind-dark";
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-primary: #26a69a;
+  --color-secondary: #00bcd4;
+  --color-accent: #2f6f69;
+  --color-neutral: #0f4950; /* stays teal: used for the page toolbars */
+
+  /* Surfaces: card, page, deepest */
+  --color-base-100: #13232b;
+  --color-base-200: #0d1a20;
+  --color-base-300: #081217;
+  --color-base-content: #e3f1ef;
+
+  /* Status colours (slightly lighter than in the light theme) */
+  --color-error: #e5566b;
+  --color-error-content: #ffffff;
+  --color-success: #3fb988;
+  --color-success-content: #06241a;
+  --color-warning: #e8b04a;
+  --color-warning-content: #2b2008;
+  --color-info: #4aaee0;
+  --color-info-content: #06202c;
+}
+
+/* Custom utility overrides */
+.btn-primary {
+  background-color: #548471;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+}
+.btn-secondary {
+  background-color: #b2dfdb;
+  color: #0f4950;
+  border: none;
+  font-weight: 600;
+}
+.link {
+  /* deep teal on light themes, lighter teal on dark ones */
+  color: color-mix(in oklab, var(--color-base-content) 25%, var(--color-primary));
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.link:hover {
+  color: #00bcd4;
+}
