@@ -198,7 +198,7 @@
     "btnCreate": "Create Code Token",
     "timelineAnalysisView": "Clinical Timeline Analysis View",
     "activeLabel": "Active",
-    "aiHeader": "Ollama Local Clinical Insights (Llama 3.1:8b)",
+    "aiHeader": "AI Patient Insights",
     "aiCompiling": "Compiling context metrics history fully offline...",
     "aiEmpty": "No background logs analysis tracked yet for this active workspace.",
     "chartHeading": "Longitudinal Visual Matrix",

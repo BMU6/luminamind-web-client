@@ -1,17 +1,40 @@
-import { Navigate, Outlet, useLocation } from 'react-router';
-import { useAuth } from '@/context';
+import { useEffect } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router";
+import { useAuth } from "@/context";
 
-// Wraps all pages that need a login. <Outlet /> is where the wrapped page is rendered.
 const ProtectedRoute = () => {
   const { signedIn, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // The stored session is still being checked: don't redirect yet, or a reload would always end on /login
-  if (loading) return <span className='loading loading-spinner loading-lg mx-auto my-10' />;
+  useEffect(() => {
+    // 1. Wait until the application finishes parsing the token session
+    if (loading) return;
 
-  // Remember where the user wanted to go, so Login can send them back there
-  if (!signedIn) return <Navigate to='/login' replace state={{ from: location }} />;
+    // 2. If the validation fails, route securely back to the login screen
+    if (!signedIn) {
+      navigate("/login", {
+        state: { from: location },
+        replace: true,
+      });
+    }
+  }, [signedIn, loading, location, navigate]);
 
+  // 3. Render a clean loading spacer during initial token handshakes
+  if (loading) {
+    return (
+      <div className="flex w-full items-center justify-center py-20">
+        <span className="loading loading-spinner loading-lg text-primary" />
+      </div>
+    );
+  }
+
+  // 4. Return layout fallback block while navigate loop safely executes
+  if (!signedIn) {
+    return null;
+  }
+
+  // 5. Success: mount the nested router layout page view seamlessly
   return <Outlet />;
 };
 
