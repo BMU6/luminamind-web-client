@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
-import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { PageCard, PageToolbar } from "@/components";
 import { useMedications } from "@/network/medicationlist";
@@ -21,42 +20,52 @@ export default function DoctorDashboard() {
   const { user } = useAuth();
   const { t } = useTranslation();
 
+  const currentUserId = user?._id || user?.id || "";
+
   const [patients, setPatients] = useState<ConnectedPatient[]>([]);
   const [selectedPatient, setSelectedPatient] =
     useState<ConnectedPatient | null>(null);
   const [aiSummary, setAiSummary] = useState<string>("");
   const [inviteCode, setInviteCode] = useState<string>("");
+
+  // Local structural feedback indicators replacing react-toastify alerts
   const [loadingPatients, setLoadingPatients] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingCode, setLoadingCode] = useState(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const [dashboardSuccess, setDashboardSuccess] = useState<string | null>(null);
 
-  // 1. Fetch connected patients array on initialization mount
   useEffect(() => {
-    if (!user) return;
+    if (!currentUserId) return;
 
     const loadPatients = async () => {
       try {
         setLoadingPatients(true);
+        setDashboardError(null);
         const response = await fetch(`${VITE_API_URL}/doctor/doctor/patients`, {
           headers: { Authorization: `Bearer ${getAccessToken()}` },
         });
-        if (!response.ok) throw new Error(t("doctor.loadPatientsError"));
+        if (!response.ok)
+          throw new Error(
+            t("doctor.loadPatientsError") ||
+              "Could not synchronize patient records panel.",
+          );
         const data = await response.json();
         setPatients(data);
       } catch (err: any) {
-        toast.error(err.message || t("doctor.fetchDirectoryError"));
+        setDashboardError(err.message || t("doctor.fetchDirectoryError"));
       } finally {
         setLoadingPatients(false);
       }
     };
 
     loadPatients();
-  }, [user, t]);
+  }, [currentUserId, t]);
 
-  // 2. Fetch local Llama 3.1 summary brief on-demand when a patient profile card is clicked
   const handleSelectPatient = async (patient: ConnectedPatient) => {
     setSelectedPatient(patient);
     setAiSummary("");
+    setDashboardError(null);
 
     try {
       setLoadingSummary(true);
@@ -66,18 +75,22 @@ export default function DoctorDashboard() {
           headers: { Authorization: `Bearer ${getAccessToken()}` },
         },
       );
-      if (!response.ok) throw new Error(t("doctor.aiBriefError"));
+      if (!response.ok)
+        throw new Error(
+          t("doctor.aiBriefError") || "Failed compiling LLM review summary.",
+        );
       const data: AISummaryResponse = await response.json();
       setAiSummary(data.brief);
     } catch (err: any) {
-      toast.error(err.message || t("doctor.aiSummarizerError"));
+      setDashboardError(err.message || t("doctor.aiSummarizerError"));
     } finally {
       setLoadingSummary(false);
     }
   };
 
-  // 3. Generate a temporary short invitation token code for a secure relationship handshake
   const handleGenerateCode = async () => {
+    setDashboardError(null);
+    setDashboardSuccess(null);
     try {
       setLoadingCode(true);
       const response = await fetch(
@@ -87,12 +100,19 @@ export default function DoctorDashboard() {
           headers: { Authorization: `Bearer ${getAccessToken()}` },
         },
       );
-      if (!response.ok) throw new Error(t("doctor.inviteTokenError"));
+      if (!response.ok)
+        throw new Error(
+          t("doctor.inviteTokenError") ||
+            "Failed computing secure handshake key.",
+        );
       const data = await response.json();
       setInviteCode(data.code);
-      toast.success(t("doctor.codeGeneratedSuccess"));
+      setDashboardSuccess(
+        t("doctor.codeGeneratedSuccess") ||
+          "New handshake security signature active.",
+      );
     } catch (err: any) {
-      toast.error(err.message || t("doctor.handshakeCodeError"));
+      setDashboardError(err.message || t("doctor.handshakeCodeError"));
     } finally {
       setLoadingCode(false);
     }
@@ -113,12 +133,29 @@ export default function DoctorDashboard() {
         }
       />
 
+      {/* Unified Context Alert Feedback Banners */}
+      {dashboardError && (
+        <div
+          role="alert"
+          className="alert alert-error rounded-xl flex items-start gap-2 bg-error/10 text-error border border-error/20 p-3 text-sm text-left mb-4 animate-fadeIn"
+        >
+          <span>{dashboardError}</span>
+        </div>
+      )}
+
+      {dashboardSuccess && (
+        <div
+          role="alert"
+          className="alert alert-success rounded-xl flex items-start gap-2 bg-success/10 text-success border border-success/20 p-3 text-sm text-left mb-4 animate-fadeIn"
+        >
+          <span>{dashboardSuccess}</span>
+        </div>
+      )}
+
       <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* LEFT COLUMN: Patient Directory Grid & Handshake Box */}
         <div className="md:col-span-1 flex flex-col gap-6">
-          {/* Patient Selection Directory */}
-          <div className="border border-base-content/10 rounded-2xl p-5 flex flex-col gap-4 bg-base-100 shadow-xs">
-            <h2 className="text-sm font-black uppercase tracking-wider text-base-content/70 border-b border-base-content/10 pb-2 text-left">
+          <div className="border border-base-200 rounded-2xl p-5 flex flex-col gap-4 bg-base-100 shadow-xs">
+            <h2 className="text-sm font-black uppercase tracking-wider text-base-content/70 border-b border-base-200 pb-2 text-left">
               {t("doctor.workspaceDirectory")}
             </h2>
 
@@ -135,21 +172,26 @@ export default function DoctorDashboard() {
                 {patients.map((pat) => (
                   <div
                     key={pat.id}
-                    onClick={() => handleSelectPatient(pat)}
-                    className={`p-3 border rounded-xl cursor-pointer transition-all flex justify-between items-center select-none ${
+                    onClick={() => {
+                      if (dashboardError) setDashboardError(null);
+                      handleSelectPatient(pat);
+                    }}
+                    className={`p-3 border rounded-xl cursor-pointer transition-all flex justify-between items-center select-none text-left ${
                       selectedPatient?.id === pat.id
-                        ? "border-primary bg-primary/5 shadow-xs font-bold"
-                        : "border-base-content/10 bg-base-100 hover:border-primary/40"
+                        ? "border-primary bg-primary/5 shadow-3xs font-bold"
+                        : "border-base-200 bg-base-100 hover:border-primary/40"
                     }`}
                   >
-                    <div className="truncate pr-2 text-left">
-                      <p className="text-xs truncate">{pat.email}</p>
-                      <p className="text-[9px] text-base-content/40 font-mono truncate">
+                    <div className="truncate pr-2">
+                      <p className="text-xs truncate font-semibold">
+                        {pat.email}
+                      </p>
+                      <p className="text-[9px] text-base-content/40 font-mono mt-0.5">
                         ID: {pat.id.substring(0, 8)}...
                       </p>
                     </div>
                     {pat.needsUrgentReview && (
-                      <span className="badge badge-error text-white font-bold text-[8px] uppercase tracking-wide rounded-md px-1.5 h-4">
+                      <span className="badge badge-error text-white font-bold text-[8px] uppercase tracking-wide rounded-md px-1.5 h-4 shrink-0">
                         {t("doctor.flaggedBadge")}
                       </span>
                     )}
@@ -159,8 +201,7 @@ export default function DoctorDashboard() {
             )}
           </div>
 
-          {/* Secure Relationship Invitation Handshake Module */}
-          <div className="border border-base-content/10 rounded-2xl p-5 flex flex-col gap-3 bg-base-100 shadow-xs text-left">
+          <div className="border border-base-200 rounded-2xl p-5 flex flex-col gap-3 bg-base-100 shadow-xs text-left">
             <h3 className="font-bold text-xs uppercase tracking-wider text-base-content/70">
               {t("doctor.connectPatientTitle")}
             </h3>
@@ -168,14 +209,14 @@ export default function DoctorDashboard() {
               {t("doctor.connectPatientSubtitle")}
             </p>
             {inviteCode && (
-              <div className="bg-base-content/5 text-center py-2.5 rounded-xl border border-base-content/10 font-mono text-xl font-black tracking-widest text-primary animate-pulse">
+              <div className="bg-base-content/5 text-center py-2.5 rounded-xl border border-base-200 font-mono text-xl font-black tracking-widest text-primary animate-fadeIn">
                 {inviteCode}
               </div>
             )}
             <button
               onClick={handleGenerateCode}
               disabled={loadingCode}
-              className="btn btn-neutral btn-sm rounded-xl w-full text-xs text-white font-bold tracking-wide"
+              className="btn btn-neutral btn-sm rounded-xl w-full text-xs text-white font-bold tracking-wide uppercase"
             >
               {loadingCode
                 ? t("doctor.btnGenerating")
@@ -186,29 +227,25 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Patient Summary and Chart Workspace Panel */}
-        {/* RIGHT COLUMN: Patient Summary and Chart Workspace Panel */}
-        <div className="md:col-span-2 border border-base-content/10 rounded-2xl p-6 flex flex-col gap-5 min-h-[60vh] bg-base-100 shadow-xs">
+        <div className="md:col-span-2 border border-base-200 rounded-2xl p-6 flex flex-col gap-5 min-h-[60vh] bg-base-100 shadow-xs">
           {selectedPatient ? (
-            <>
-              <header className="border-b border-base-content/10 pb-3 flex flex-wrap gap-2 justify-between items-center">
+            <div className="animate-fadeIn space-y-5">
+              <header className="border-b border-base-200 pb-3 flex flex-wrap gap-2 justify-between items-center">
                 <h3 className="text-base font-black tracking-tight text-left">
                   {t("doctor.timelineAnalysisView")}
                 </h3>
-                <span className="text-[10px] font-mono bg-base-content/10 px-3 py-1 rounded-lg truncate max-w-xs">
+                <span className="text-[10px] font-mono bg-base-content/10 px-3 py-1 rounded-lg truncate max-w-xs font-semibold">
                   {t("doctor.activeLabel")}: {selectedPatient.email}
                 </span>
               </header>
 
-              {/* Local Privacy AI Engine Context Output Container */}
-              <div className="bg-base-content/5 border border-base-content/10 rounded-xl p-4 space-y-2 shadow-inner text-left">
+              <div className="bg-base-content/5 border border-base-200 rounded-xl p-4 space-y-2 shadow-inner text-left">
                 <div className="flex items-center gap-1.5 text-base-content/60">
-                  <span className="text-base">🦙</span>
+                  <span className="text-base"></span>
                   <span className="text-[9px] font-bold uppercase tracking-widest">
                     {t("doctor.aiHeader")}
                   </span>
                 </div>
-
                 {loadingSummary ? (
                   <div className="py-2 flex items-center gap-2 text-xs text-base-content/50 italic">
                     <span className="loading loading-dots loading-xs"></span>
@@ -221,19 +258,14 @@ export default function DoctorDashboard() {
                 )}
               </div>
 
-              {/* DYNAMIC MEDICATION COMPONENT VIEW: Injected Right inside the Doctor's Active Dashboard Workspace! */}
+              {/* Patient Regimen Sub-component Integration Mapping Layer */}
               <DoctorMedicationWorkspace
-                userId={
-                  user && "sub" in user
-                    ? (user.sub as string)
-                    : (user as any)?.id || (user as any)?._id || ""
-                }
+                userId={currentUserId}
                 patientId={selectedPatient.id}
                 t={t}
               />
 
-              {/* Chart Canvas Engine Box Canvas Placeholder */}
-              <div className="border border-dashed border-base-content/20 rounded-xl flex flex-col items-center justify-center bg-base-content/5 text-center p-4 min-h-[140px]">
+              {/* <div className="border border-dashed border-base-content/20 rounded-xl flex flex-col items-center justify-center bg-base-content/5 text-center p-4 min-h-[140px]">
                 <span className="text-sm opacity-40 mb-0.5">📈</span>
                 <h4 className="font-bold text-[11px] text-base-content/60 mb-0.5">
                   {t("doctor.chartHeading")}
@@ -241,8 +273,8 @@ export default function DoctorDashboard() {
                 <p className="text-[9px] text-base-content/40 font-semibold max-w-xs leading-normal">
                   {t("doctor.chartSubtitle")}
                 </p>
-              </div>
-            </>
+              </div> */}
+            </div>
           ) : (
             <div className="m-auto text-center space-y-2.5 text-base-content/40 select-none py-16">
               <div className="text-4xl">📋</div>
@@ -282,7 +314,7 @@ export function DoctorMedicationWorkspace({
 
   return (
     <div className="space-y-4 mt-2">
-      <div className="flex justify-between items-center border-b border-base-content/10 pb-2">
+      <div className="flex justify-between items-center border-b border-base-200 pb-2">
         <h4 className="text-xs font-black uppercase tracking-wider text-base-content/60">
           📋 {t("doctor.medsWorkspaceHeading", "Active Regimen Matrix")}
         </h4>
@@ -300,7 +332,7 @@ export function DoctorMedicationWorkspace({
           <span>{t("meds.loading")}</span>
         </div>
       ) : medications.length === 0 ? (
-        <p className="text-xs text-base-content/40 italic py-2">
+        <p className="text-xs text-base-content/40 italic py-2 text-left">
           {t(
             "meds.emptyTitle",
             "No current medications linked to this patient.",
@@ -311,7 +343,7 @@ export function DoctorMedicationWorkspace({
           {medications.map((med) => (
             <div
               key={med.id}
-              className="border border-base-content/10 rounded-xl p-3 bg-base-200/30 text-left space-y-3"
+              className="border border-base-200 rounded-xl p-3 bg-base-200/30 text-left space-y-3 animate-fadeIn"
             >
               <div className="flex items-center justify-between gap-3">
                 {med.isEditing ? (
@@ -333,7 +365,6 @@ export function DoctorMedicationWorkspace({
                 </span>
               </div>
 
-              {/* Extra Parameters Expand Form fields */}
               <div className="grid grid-cols-2 gap-3 text-[11px]">
                 <div>
                   <span className="block opacity-40 font-bold uppercase text-[9px] mb-0.5">
@@ -399,14 +430,14 @@ export function DoctorMedicationWorkspace({
                 })}
               </div>
 
-              {/* Execution panel button triggers */}
+              {/* Action buttons */}
               <div className="flex justify-end gap-2 pt-1 border-t border-base-content/5 text-[10px]">
                 <button
                   onClick={() => toggleEditMode(med.id)}
                   className={`px-3 py-1 font-bold rounded-lg border transition-all ${
                     med.isEditing
                       ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
-                      : "bg-base-100 border-base-content/10 hover:bg-base-content/5"
+                      : "bg-base-100 border-base-200 hover:bg-base-content/5"
                   }`}
                 >
                   {med.isEditing ? t("meds.saveBtn") : t("meds.editBtn")}
