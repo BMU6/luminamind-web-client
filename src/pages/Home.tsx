@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
@@ -553,8 +553,10 @@ export function PatientLinkHandshakeWidget() {
 
       toast.success(data.message || t("home.handshake.successFallback"));
       setCode("");
-    } catch (err: any) {
-      toast.error(err.message || t("home.handshake.errorFallback"));
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : t("home.handshake.errorFallback"),
+      );
     } finally {
       setSubmitting(false);
     }
