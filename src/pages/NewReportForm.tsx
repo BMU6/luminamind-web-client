@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "@/context/useAuth";
 import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import { PageCard, PageToolbar, ToolbarButton } from "@/components";
+import { VITE_API_URL } from "@/config";
 
 export default function NewReportForm() {
   const { user } = useAuth();
@@ -30,7 +31,7 @@ export default function NewReportForm() {
   // 3. Auto-populate current treatments on mount
   useEffect(() => {
     if (!userId) return;
-    fetch(`http://localhost:3000/medicationlist`)
+    fetch(`${VITE_API_URL}/medicationlist`)
       .then((res) => res.json())
       .then((data) => setAvailableMeds(Array.isArray(data) ? data : []))
       .catch((err) =>
@@ -50,7 +51,7 @@ export default function NewReportForm() {
         dosage: m.dosage,
       }));
 
-      const response = await fetch("http://localhost:3000/reports", {
+      const response = await fetch(`${VITE_API_URL}/reports`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

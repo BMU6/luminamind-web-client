@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
-import { toast } from "react-toastify";
 import {
   Chart as ChartJS,
   LinearScale,
