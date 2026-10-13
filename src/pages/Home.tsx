@@ -71,13 +71,9 @@ const useChartColors = () => {
 };
 
 type Orientation = "horizontal" | "vertical";
-
-// FIXED: Explicitly declare the type literal constraint signature for tracking keys
 type MetricKey = "mood" | "energy" | "sleep" | "concentration" | "irritability";
-
 type Medication = { id: string; name: string; dosage: string };
 
-// FIXED: Linked properties correctly via intersection objects mapping MetricKey parameters
 type Report = {
   id: string;
   at: number;
@@ -90,7 +86,6 @@ type Report = {
 const WINDOW_DAYS = 7;
 const BLOCK_DAYS = 7;
 const WHEEL_STEP = 100;
-
 const TODAY = startOfDay(new Date());
 
 const blockStart = (k: number) => addDays(TODAY, k * BLOCK_DAYS);
@@ -115,15 +110,18 @@ const fetchBlock = async (k: number): Promise<Report[]> => {
 };
 
 const REPORT_LANE = -0.5;
+
 export const Home = () => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
   useEffect(() => {
     if (user?.roles?.includes("doctor")) {
       navigate("/doctor/dashboard", { replace: true });
     }
   }, [user, navigate]);
+
   const [orientation, setOrientation] = useState<Orientation>(() =>
     window.matchMedia("(max-width: 1023px)").matches
       ? "vertical"
@@ -151,7 +149,6 @@ export const Home = () => {
   const vertical = orientation === "vertical";
   const chartColors = useChartColors();
 
-  // FIXED: Cast keys strictly as MetricKey literals to prevent implicit any index type errors
   const METRICS = useMemo(
     () => [
       {
@@ -253,8 +250,7 @@ export const Home = () => {
       if (steps === 0) return;
       wheelDistance.current -= steps * WHEEL_STEP;
 
-      const days = vertical ? -steps : steps;
-      setWindowStart((start) => addDays(start, days));
+      setWindowStart((start) => addDays(start, vertical ? -steps : steps));
     };
 
     box.addEventListener("wheel", onWheel, { passive: false });
@@ -268,6 +264,7 @@ export const Home = () => {
         .sort((a, b) => a.at - b.at),
     [blocks],
   );
+
   const data = useMemo<ChartData<"line">>(() => {
     const point = (time: number, value: number) =>
       vertical ? { x: value, y: time } : { x: time, y: value };
@@ -298,7 +295,6 @@ export const Home = () => {
       ],
     };
   }, [vertical, reports, METRICS, t]);
-
   const options = useMemo<ChartOptions<"line">>(() => {
     const timeScale = {
       type: "time" as const,
@@ -351,13 +347,14 @@ export const Home = () => {
         },
       },
       onClick: (_event: any, elements: any) => {
-        const hit = elements[0];
+        const hit = elements;
         if (!hit) return;
         const clickedReport = reports[hit.index];
         if (clickedReport) setSelectedReport(clickedReport);
       },
     };
   }, [vertical, windowStart, reports, chartColors, t, REPORT_DATASET_INDEX]);
+
   return (
     <PageCard size="lg">
       <PageToolbar
@@ -461,7 +458,6 @@ export const Home = () => {
             )}
           </div>
         </section>
-
         <aside className="lg:col-span-1 border border-base-200 rounded-2xl p-5 space-y-3 text-left">
           <PatientLinkHandshakeWidget />
           <h2 className="text-xs font-bold tracking-widest uppercase text-secondary">
@@ -530,11 +526,20 @@ export function PatientLinkHandshakeWidget() {
   const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: "success" | "error" | "warning";
+    text: string;
+  } | null>(null);
 
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatusMessage(null);
+
     if (!code.trim() || code.length !== 6) {
-      return toast.warning(t("home.handshake.warning"));
+      return setStatusMessage({
+        type: "warning",
+        text: t("home.handshake.warning"),
+      });
     }
 
     try {
@@ -551,12 +556,19 @@ export function PatientLinkHandshakeWidget() {
       if (!res.ok)
         throw new Error(data.error || t("home.handshake.errorFallback"));
 
-      toast.success(data.message || t("home.handshake.successFallback"));
+      setStatusMessage({
+        type: "success",
+        text: data.message || t("home.handshake.successFallback"),
+      });
       setCode("");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t("home.handshake.errorFallback"),
-      );
+      setStatusMessage({
+        type: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : t("home.handshake.errorFallback"),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -573,12 +585,31 @@ export function PatientLinkHandshakeWidget() {
       <p className="text-[11px] opacity-50 leading-relaxed font-medium">
         {t("home.handshake.subtitle")}
       </p>
+
+      {statusMessage && (
+        <div
+          role="alert"
+          className={`p-3 text-xs rounded-xl font-medium border text-left animate-fadeIn ${
+            statusMessage.type === "success"
+              ? "bg-green-50 border-green-200 text-green-800"
+              : statusMessage.type === "warning"
+                ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                : "bg-red-50 border-red-200 text-red-800"
+          }`}
+        >
+          {statusMessage.text}
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         <input
           type="text"
           placeholder={t("home.handshake.placeholder")}
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onChange={(e) => {
+            setCode(e.target.value.toUpperCase());
+            if (statusMessage) setStatusMessage(null);
+          }}
           className="input input-bordered rounded-xl h-8 min-w-0 px-3 text-xs font-mono tracking-wider grow bg-base-100 focus:outline-primary"
           maxLength={6}
           disabled={submitting}

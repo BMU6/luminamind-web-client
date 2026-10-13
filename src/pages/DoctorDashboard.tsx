@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context";
 import { VITE_API_URL } from "@/config";
 import { getAccessToken } from "@/storage";
-import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { PageCard, PageToolbar } from "@/components";
 import { useMedications } from "@/network/medicationlist";
@@ -30,6 +29,14 @@ export default function DoctorDashboard() {
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingCode, setLoadingCode] = useState(false);
 
+  // Localized component alerts to swap out global notification overlays
+  const [directoryError, setDirectoryError] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [handshakeStatus, setHandshakeStatus] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   // 1. Fetch connected patients array on initialization mount
   useEffect(() => {
     if (!user) return;
@@ -37,6 +44,7 @@ export default function DoctorDashboard() {
     const loadPatients = async () => {
       try {
         setLoadingPatients(true);
+        setDirectoryError(null);
         const response = await fetch(`${VITE_API_URL}/doctor/doctor/patients`, {
           headers: { Authorization: `Bearer ${getAccessToken()}` },
         });
@@ -44,7 +52,7 @@ export default function DoctorDashboard() {
         const data = await response.json();
         setPatients(data);
       } catch (err: any) {
-        toast.error(err.message || t("doctor.fetchDirectoryError"));
+        setDirectoryError(err.message || t("doctor.fetchDirectoryError"));
       } finally {
         setLoadingPatients(false);
       }
@@ -57,6 +65,7 @@ export default function DoctorDashboard() {
   const handleSelectPatient = async (patient: ConnectedPatient) => {
     setSelectedPatient(patient);
     setAiSummary("");
+    setSummaryError(null);
 
     try {
       setLoadingSummary(true);
@@ -70,7 +79,7 @@ export default function DoctorDashboard() {
       const data: AISummaryResponse = await response.json();
       setAiSummary(data.brief);
     } catch (err: any) {
-      toast.error(err.message || t("doctor.aiSummarizerError"));
+      setSummaryError(err.message || t("doctor.aiSummarizerError"));
     } finally {
       setLoadingSummary(false);
     }
@@ -78,6 +87,7 @@ export default function DoctorDashboard() {
 
   // 3. Generate a temporary short invitation token code for a secure relationship handshake
   const handleGenerateCode = async () => {
+    setHandshakeStatus(null);
     try {
       setLoadingCode(true);
       const response = await fetch(
@@ -90,13 +100,20 @@ export default function DoctorDashboard() {
       if (!response.ok) throw new Error(t("doctor.inviteTokenError"));
       const data = await response.json();
       setInviteCode(data.code);
-      toast.success(t("doctor.codeGeneratedSuccess"));
+      setHandshakeStatus({
+        type: "success",
+        text: t("doctor.codeGeneratedSuccess"),
+      });
     } catch (err: any) {
-      toast.error(err.message || t("doctor.handshakeCodeError"));
+      setHandshakeStatus({
+        type: "error",
+        text: err.message || t("doctor.handshakeCodeError"),
+      });
     } finally {
       setLoadingCode(false);
     }
   };
+
   return (
     <PageCard size="lg">
       <PageToolbar
@@ -121,6 +138,12 @@ export default function DoctorDashboard() {
             <h2 className="text-sm font-black uppercase tracking-wider text-base-content/70 border-b border-base-content/10 pb-2 text-left">
               {t("doctor.workspaceDirectory")}
             </h2>
+
+            {directoryError && (
+              <div className="p-3 text-xs rounded-xl bg-red-50 border border-red-200 text-red-800 text-left animate-fadeIn">
+                {directoryError}
+              </div>
+            )}
 
             {loadingPatients ? (
               <div className="text-center py-6">
@@ -158,7 +181,6 @@ export default function DoctorDashboard() {
               </div>
             )}
           </div>
-
           {/* Secure Relationship Invitation Handshake Module */}
           <div className="border border-base-content/10 rounded-2xl p-5 flex flex-col gap-3 bg-base-100 shadow-xs text-left">
             <h3 className="font-bold text-xs uppercase tracking-wider text-base-content/70">
@@ -167,6 +189,32 @@ export default function DoctorDashboard() {
             <p className="text-[11px] text-base-content/50 leading-relaxed font-medium">
               {t("doctor.connectPatientSubtitle")}
             </p>
+
+            {/* Contextual Handshake Token Inline Feedback Alert */}
+            {handshakeStatus && (
+              <div
+                role="alert"
+                className={`p-3 text-xs rounded-xl font-medium border text-left animate-fadeIn ${
+                  handshakeStatus.type === "success"
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-red-50 border-red-200 text-red-800"
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={
+                      handshakeStatus.type === "success"
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }
+                  >
+                    {handshakeStatus.type === "success" ? "✓" : "✕"}
+                  </span>
+                  <p>{handshakeStatus.text}</p>
+                </div>
+              </div>
+            )}
+
             {inviteCode && (
               <div className="bg-base-content/5 text-center py-2.5 rounded-xl border border-base-content/10 font-mono text-xl font-black tracking-widest text-primary animate-pulse">
                 {inviteCode}
@@ -187,7 +235,6 @@ export default function DoctorDashboard() {
         </div>
 
         {/* RIGHT COLUMN: Patient Summary and Chart Workspace Panel */}
-        {/* RIGHT COLUMN: Patient Summary and Chart Workspace Panel */}
         <div className="md:col-span-2 border border-base-content/10 rounded-2xl p-6 flex flex-col gap-5 min-h-[60vh] bg-base-100 shadow-xs">
           {selectedPatient ? (
             <>
@@ -203,11 +250,17 @@ export default function DoctorDashboard() {
               {/* Local Privacy AI Engine Context Output Container */}
               <div className="bg-base-content/5 border border-base-content/10 rounded-xl p-4 space-y-2 shadow-inner text-left">
                 <div className="flex items-center gap-1.5 text-base-content/60">
-                  <span className="text-base">🦙</span>
+                  <span className="text-base"></span>
                   <span className="text-[9px] font-bold uppercase tracking-widest">
                     {t("doctor.aiHeader")}
                   </span>
                 </div>
+
+                {summaryError && (
+                  <p className="text-xs text-red-600 font-medium animate-fadeIn">
+                    {summaryError}
+                  </p>
+                )}
 
                 {loadingSummary ? (
                   <div className="py-2 flex items-center gap-2 text-xs text-base-content/50 italic">
@@ -221,7 +274,7 @@ export default function DoctorDashboard() {
                 )}
               </div>
 
-              {/* DYNAMIC MEDICATION COMPONENT VIEW: Injected Right inside the Doctor's Active Dashboard Workspace! */}
+              {/* DYNAMIC MEDICATION COMPONENT VIEW */}
               <DoctorMedicationWorkspace
                 userId={
                   user && "sub" in user
@@ -231,17 +284,7 @@ export default function DoctorDashboard() {
                 patientId={selectedPatient.id}
                 t={t}
               />
-
               {/* Chart Canvas Engine Box Canvas Placeholder */}
-              <div className="border border-dashed border-base-content/20 rounded-xl flex flex-col items-center justify-center bg-base-content/5 text-center p-4 min-h-[140px]">
-                <span className="text-sm opacity-40 mb-0.5">📈</span>
-                <h4 className="font-bold text-[11px] text-base-content/60 mb-0.5">
-                  {t("doctor.chartHeading")}
-                </h4>
-                <p className="text-[9px] text-base-content/40 font-semibold max-w-xs leading-normal">
-                  {t("doctor.chartSubtitle")}
-                </p>
-              </div>
             </>
           ) : (
             <div className="m-auto text-center space-y-2.5 text-base-content/40 select-none py-16">
@@ -259,6 +302,7 @@ export default function DoctorDashboard() {
     </PageCard>
   );
 }
+
 interface DoctorMedicationWorkspaceProps {
   userId: string;
   patientId: string;
@@ -333,7 +377,6 @@ export function DoctorMedicationWorkspace({
                 </span>
               </div>
 
-              {/* Extra Parameters Expand Form fields */}
               <div className="grid grid-cols-2 gap-3 text-[11px]">
                 <div>
                   <span className="block opacity-40 font-bold uppercase text-[9px] mb-0.5">
