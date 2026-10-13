@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { VITE_API_URL } from "@/config";
 
 export function useReports(userId: string) {
   const [reports, setReports] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export function useReports(userId: string) {
       try {
         setLoading(true);
         const response = await fetch(
-          `http://localhost:3000/reports`,
+          `${VITE_API_URL}/reports`,
         );
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -83,7 +84,7 @@ export function useReports(userId: string) {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:3000/reports/${id}`, {
+      const response = await fetch(`${VITE_API_URL}/reports/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("DELETE action failed");
