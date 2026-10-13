@@ -175,7 +175,7 @@ export default function DoctorDashboard() {
             <button
               onClick={handleGenerateCode}
               disabled={loadingCode}
-              className="btn btn-neutral btn-sm rounded-xl w-full text-xs text-white font-bold tracking-wide"
+              className="btn btn-primary btn-sm rounded-xl w-full text-xs text-white font-bold tracking-wide"
             >
               {loadingCode
                 ? t("doctor.btnGenerating")
@@ -403,17 +403,13 @@ export function DoctorMedicationWorkspace({
               <div className="flex justify-end gap-2 pt-1 border-t border-base-content/5 text-[10px]">
                 <button
                   onClick={() => toggleEditMode(med.id)}
-                  className={`px-3 py-1 font-bold rounded-lg border transition-all ${
-                    med.isEditing
-                      ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
-                      : "bg-base-100 border-base-content/10 hover:bg-base-content/5"
-                  }`}
+                  className="btn btn-xs btn-primary rounded-lg px-3 font-bold text-white"
                 >
                   {med.isEditing ? t("meds.saveBtn") : t("meds.editBtn")}
                 </button>
                 <button
                   onClick={() => deleteMedication(med.id)}
-                  className="px-2 py-1 text-error font-bold hover:bg-error/10 rounded-lg"
+                  className="btn btn-xs btn-error border-none rounded-lg px-3 font-bold"
                 >
                   {t("meds.deleteBtn")}
                 </button>

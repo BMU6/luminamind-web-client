@@ -279,7 +279,7 @@ export default function NewReportForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="btn btn-md btn-neutral text-white rounded-xl px-8 font-bold tracking-wider cursor-pointer shadow-md hover:bg-neutral/90 transition-all uppercase"
+            className="btn btn-md btn-primary text-white rounded-xl px-8 font-bold cursor-pointer shadow-md"
           >
             {submitting ? t("newReport.submitting") : t("newReport.submitBtn")}
           </button>

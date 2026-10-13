@@ -565,7 +565,7 @@ export function PatientLinkHandshakeWidget() {
   return (
     <form
       onSubmit={handleLinkSubmit}
-      className="card bg-base-100 p-5 border border-base-200/60 rounded-2xl shadow-xs max-w-md space-y-3 font-sans text-neutral"
+      className="card bg-base-100 p-5 border border-base-200/60 rounded-2xl shadow-xs max-w-md space-y-3 font-sans text-base-content"
     >
       <h3 className="font-bold text-xs uppercase tracking-wide opacity-70">
         {t("home.handshake.title")}
@@ -573,20 +573,20 @@ export function PatientLinkHandshakeWidget() {
       <p className="text-[11px] opacity-50 leading-relaxed font-medium">
         {t("home.handshake.subtitle")}
       </p>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <input
           type="text"
           placeholder={t("home.handshake.placeholder")}
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          className="input input-bordered rounded-xl text-xs font-mono tracking-widest grow bg-base-100 focus:outline-primary"
+          className="input input-bordered rounded-xl h-8 min-w-0 px-3 text-xs font-mono tracking-wider grow bg-base-100 focus:outline-primary"
           maxLength={6}
           disabled={submitting}
         />
         <button
           type="submit"
           disabled={submitting}
-          className="btn btn-primary btn-sm rounded-xl font-bold h-full px-4 text-xs"
+          className="btn btn-primary btn-sm rounded-xl font-bold px-4 text-white"
         >
           {submitting
             ? t("home.handshake.connecting")

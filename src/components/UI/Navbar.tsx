@@ -51,7 +51,7 @@ const Navbar = () => {
         )}
 
         {/* NAVIGATION LINKS TIMELINE */}
-        <ul className="menu menu-horizontal px-1 [&_a.active]:bg-primary [&_a.active]:text-primary-content! [&_li>*:not(.active):hover]:text-base-content/70 [&_li>*]:transition-colors gap-1.5 font-medium shrink-0">
+        <ul className="menu menu-horizontal px-1 [&_a.active]:bg-neutral [&_a.active]:text-white! [&_li>*:not(.active):hover]:text-base-content/70 [&_li>*]:transition-colors gap-1.5 font-medium shrink-0">
           {!loading &&
             (signedIn ? (
               <>

@@ -308,7 +308,7 @@ export default function ReportDetails() {
             setEditForm({ ...report });
             setIsEditing(true);
           }}
-          className="btn btn-outline btn-primary rounded-xl px-6 font-bold flex items-center gap-2"
+          className="btn btn-primary rounded-xl px-6 font-bold flex items-center gap-2"
           disabled={isDeleting}
         >
           {t("details.editReportBtn")}
@@ -316,7 +316,7 @@ export default function ReportDetails() {
 
         <button
           onClick={() => setShowDeleteConfirm(true)}
-          className="btn btn-error rounded-xl px-6 font-bold flex items-center gap-2"
+          className="btn btn-error border-none rounded-xl px-6 font-bold flex items-center gap-2"
           disabled={isDeleting}
         >
           {t("details.deleteBtn")}
@@ -457,7 +457,7 @@ export default function ReportDetails() {
               <button
                 type="button"
                 onClick={handleDeleteConfirmExecution}
-                className="btn btn-error rounded-xl px-5 font-bold shadow-md"
+                className="btn btn-error border-none rounded-xl px-5 font-bold shadow-md"
               >
                 {t("details.deleteConfirmSubmit")}
               </button>
