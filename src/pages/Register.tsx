@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router";
-import { toast } from "react-toastify";
-import { useTranslation } from "react-i18next"; // Core Translation framework hook
+import { useTranslation } from "react-i18next";
 import type { RegisterData } from "@/types";
 import { useAuth } from "@/context";
 import { PageCard, PageToolbar } from "@/components";
 
 const Register = () => {
-  const { t } = useTranslation(); // Pulls the translation lookup handle
+  const { t } = useTranslation();
   const { signedIn, handleRegister, user } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  // Initialized form state with type-safe 'role' parameter defaulting to patient
+  // Localized alert text banner state tracking replaces global toast
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [formState, setForm] = useState<RegisterData>({
     email: "",
     password: "",
@@ -21,22 +22,29 @@ const Register = () => {
 
   const { email, password, confirmPassword, role } = formState;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    if (errorMessage) setErrorMessage(null); // Clear errors dynamically on type
+  };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value as "patient" | "doctor",
     }));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorMessage(null);
+
     try {
-      if (!email || !password || !confirmPassword)
+      if (!email || !password || !confirmPassword) {
         throw new Error(t("register.requiredError"));
-      if (password !== confirmPassword)
+      }
+      if (password !== confirmPassword) {
         throw new Error(t("register.matchError"));
+      }
 
       setLoading(true);
       await handleRegister({
@@ -45,10 +53,9 @@ const Register = () => {
         confirmPassword,
         role,
       });
-      toast.success(t("register.successMessage"));
     } catch (error: unknown) {
       const message = (error as { message: string }).message;
-      toast.error(message);
+      setErrorMessage(message); // Sets the error directly to the local view panel
     } finally {
       setLoading(false);
     }
@@ -64,7 +71,19 @@ const Register = () => {
   return (
     <PageCard size="sm">
       <PageToolbar title={t("register.title")} />
+
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        {/* Inline Component Alert Box matches Screenshot 2 styling */}
+        {errorMessage && (
+          <div
+            role="alert"
+            className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm rounded-xl text-left animate-fadeIn"
+          >
+            <span className="flex-shrink-0 text-red-500 font-bold"></span>
+            <p className="font-medium">{errorMessage}</p>
+          </div>
+        )}
+
         <label className="input rounded-xl w-full flex items-center gap-2 border border-base-content/30 bg-base-100 focus-within:border-primary">
           <svg
             xmlns="http://w3.org"
@@ -155,6 +174,7 @@ const Register = () => {
             {t("register.loginLink")}
           </Link>
         </small>
+
         <button
           className="btn btn-primary self-center rounded-xl px-8"
           disabled={loading}
