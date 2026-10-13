@@ -83,7 +83,7 @@
     "notesPlaceholder": "Beschreiben Sie psychologische Beobachtungen, Nebenwirkungen oder bemerkenswerte Meilensteine der Therapie heute...",
     "scoreLabel": "Wert",
     "submitting": "Eintrag wird gespeichert...",
-    "submitBtn": "Fortschrittsbericht senden",
+    "submitBtn": "Speichern",
     "metrics": {
       "mood": {
         "label": "Stimmung",
@@ -138,7 +138,7 @@
     "notesTitle": "Beobachtungsnotizen des Patienten (Nachricht)",
     "noNotesRecorded": "An diesem Tag wurden keine benutzerdefinierten Beobachtungen oder Nebenwirkungen protokolliert.",
     "scoreLabel": "Wert",
-    "editReportBtn": " Bericht bearbeiten",
+    "editReportBtn": "Bearbeiten",
     "deleteBtn": " Löschen",
     "modalTitle": "📝 Täglichen Fortschrittsbericht bearbeiten",
     "modalNotesLabel": "Beobachtungen & Symptomnotizen",
@@ -181,9 +181,9 @@
       "evening": "abends",
       "night": "nachts"
     },
-    "saveBtn": "SPEICHERN",
-    "editBtn": "BEARBEITEN",
-    "deleteBtn": "LÖSCHEN"
+    "saveBtn": "Speichern",
+    "editBtn": "Bearbeiten",
+    "deleteBtn": "Löschen"
   },
   "doctor": {
     "loadPatientsError": "Patientenverzeichnis konnte nicht geladen werden.",

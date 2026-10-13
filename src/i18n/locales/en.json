@@ -82,7 +82,7 @@
     "notesPlaceholder": "Describe any custom psychological observations, side-effects, or notable therapy milestones encountered today...",
     "scoreLabel": "Score",
     "submitting": "Saving Entry Log...",
-    "submitBtn": "Submit Progress Report",
+    "submitBtn": "Save",
     "metrics": {
       "mood": { "label": "Mood", "left": "Severe Low", "right": "Excellent" },
       "irritability": {
@@ -133,7 +133,7 @@
     "notesTitle": "Patient Observation Notes (Message)",
     "noNotesRecorded": "No custom observations or side-effect descriptions were logged on this day record.",
     "scoreLabel": "Score",
-    "editReportBtn": " Edit Report",
+    "editReportBtn": "Edit",
     "deleteBtn": " Delete",
     "modalTitle": "📝 Edit Daily Progress Record",
     "modalNotesLabel": "Observations & Symptoms Note",
@@ -176,9 +176,9 @@
       "evening": "evening",
       "night": "night"
     },
-    "saveBtn": "SAVE",
-    "editBtn": "EDIT",
-    "deleteBtn": "DELETE"
+    "saveBtn": "Save",
+    "editBtn": "Edit",
+    "deleteBtn": "Delete"
   },
   "doctor": {
     "loadPatientsError": "Failed to load patient directory.",
