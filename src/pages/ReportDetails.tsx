@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next"; // Core Translation framework hook
 import { PageCard, PageToolbar, ToolbarButton } from "@/components";
+import { VITE_API_URL } from "@/config";
 
 export default function ReportDetails() {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +23,7 @@ export default function ReportDetails() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`http://localhost:3000/reports/${id}`)
+    fetch(`${VITE_API_URL}/reports/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error(t("details.locateError"));
         return res.json();
@@ -44,7 +45,7 @@ export default function ReportDetails() {
     try {
       setShowDeleteConfirm(false);
       setIsDeleting(true);
-      const res = await fetch(`http://localhost:3000/reports/${id}`, {
+      const res = await fetch(`${VITE_API_URL}/reports/${id}`, {
         method: "DELETE",
       });
 
@@ -70,7 +71,7 @@ export default function ReportDetails() {
 
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:3000/reports/${id}`, {
+      const res = await fetch(`${VITE_API_URL}/reports/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { MedicationListType } from "@/types/medicationType";
 import { getAccessToken } from "@/storage";
+import { VITE_API_URL } from "@/config";
 
 export function useMedications(userId: string, targetPatientId?: string) {
   const [medications, setMedications] = useState<MedicationListType[]>([]);
@@ -15,8 +16,8 @@ export function useMedications(userId: string, targetPatientId?: string) {
         setLoading(true);
 
         const url = targetPatientId
-          ? `http://localhost:3000/medicationlist?patientId=${targetPatientId}`
-          : `http://localhost:3000/medicationlist`;
+          ? `${VITE_API_URL}/medicationlist?patientId=${targetPatientId}`
+          : `${VITE_API_URL}/medicationlist`;
 
         const response = await fetch(url, {
           method: "GET",
@@ -63,7 +64,7 @@ export function useMedications(userId: string, targetPatientId?: string) {
         patientId: targetPatientId || userId,
       };
 
-      const response = await fetch("http://localhost:3000/medicationlist/", {
+      const response = await fetch(`${VITE_API_URL}/medicationlist/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,7 +95,7 @@ export function useMedications(userId: string, targetPatientId?: string) {
     if (currentMed && currentMed.isEditing) {
       try {
         const response = await fetch(
-          `http://localhost:3000/medicationlist/${id}`,
+          `${VITE_API_URL}/medicationlist/${id}`,
           {
             method: "PUT",
             headers: {
@@ -143,7 +144,7 @@ export function useMedications(userId: string, targetPatientId?: string) {
   const deleteMedication = async (id: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/medicationlist/${id}`,
+        `${VITE_API_URL}/medicationlist/${id}`,
         {
           method: "DELETE",
           headers: {
