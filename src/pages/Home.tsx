@@ -281,7 +281,7 @@ export const Home = () => {
           pointHitRadius: 10,
         })),
         {
-          label: t("home.checkInLaneLabel"),
+          label: t("home.reportLaneLabel"),
           data: reports.map((r) => point(r.at, REPORT_LANE)),
           showLine: false,
           borderColor: "#64748b",
@@ -338,7 +338,7 @@ export const Home = () => {
           callbacks: {
             label: (ctx: any) => {
               if (ctx.datasetIndex === REPORT_DATASET_INDEX)
-                return t("home.tooltipCheckIn");
+                return t("home.tooltipReport");
               const raw = ctx.raw as { x: number; y: number };
               return `${ctx.dataset.label}: ${vertical ? raw.x : raw.y}`;
             },
@@ -346,14 +346,13 @@ export const Home = () => {
         },
       },
       onClick: (_event: any, elements: any) => {
-        const hit = elements;
-        if (!hit) return;
+        const hit = elements[0];
+        if (!hit) return;         
         const clickedReport = reports[hit.index];
         if (clickedReport) setSelectedReport(clickedReport);
       },
     };
   }, [vertical, windowStart, reports, chartColors, t, REPORT_DATASET_INDEX]);
-
   return (
     <PageCard size="lg">
       <PageToolbar
@@ -460,7 +459,7 @@ export const Home = () => {
         <aside className="lg:col-span-1 border border-base-200 rounded-2xl p-5 space-y-3 text-left">
           <PatientLinkHandshakeWidget />
           <h2 className="text-xs font-bold tracking-widest uppercase text-secondary">
-            {t("home.checkInHeading")}
+            {t("home.reportHeading")}
           </h2>
           {selectedReport ? (
             <>
