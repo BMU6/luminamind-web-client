@@ -36,9 +36,6 @@ const Navbar = () => {
           className="btn btn-ghost text-xl font-bold gap-2 px-2 hover:bg-transparent"
         >
           LuminaMind
-          <span role="img" aria-labelledby="heart">
-            ❤️
-          </span>
         </Link>
       </div>
 
