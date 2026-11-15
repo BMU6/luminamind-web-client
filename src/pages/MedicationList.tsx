@@ -273,17 +273,13 @@ export default function MedicationList() {
                     <div className="flex justify-end items-center gap-4 pt-2 border-t border-base-200/60">
                       <button
                         onClick={() => toggleEditMode(med.id)}
-                        className={`btn btn-sm rounded-xl px-5 font-bold tracking-wider cursor-pointer shadow-sm border ${
-                          med.isEditing
-                            ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
-                            : "bg-base-200 text-base-content border-base-300 hover:bg-base-300"
-                        }`}
+                        className="btn btn-sm btn-primary rounded-xl px-5 font-bold cursor-pointer"
                       >
                         {med.isEditing ? t("meds.saveBtn") : t("meds.editBtn")}
                       </button>
                       <button
                         onClick={() => deleteMedication(med.id)}
-                        className="btn btn-sm btn-ghost text-error font-bold tracking-wider hover:bg-error/10 rounded-xl px-4 cursor-pointer"
+                        className="btn btn-sm btn-error border-none rounded-xl px-5 font-bold cursor-pointer"
                       >
                         {t("meds.deleteBtn")}
                       </button>

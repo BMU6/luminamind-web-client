@@ -5,6 +5,7 @@ import { useReports } from "@/utils/reports";
 import { MedicationListType } from "@/types/medicationType";
 import { PageCard, PageToolbar } from "@/components";
 import { useTranslation } from "react-i18next"; // Core Translation framework hook
+import { VITE_API_URL } from "@/config";
 
 export default function ReportList() {
   const { user } = useAuth();
@@ -17,7 +18,7 @@ export default function ReportList() {
 
   useEffect(() => {
     if (!userId) return;
-    fetch(`http://localhost:3000/medicationlist`)
+    fetch(`${VITE_API_URL}/medicationlist`)
       .then((res) => res.json())
       .then((data) => setAvailableMeds(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Error pre-loading medications:", err));

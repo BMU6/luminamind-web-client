@@ -36,9 +36,6 @@ const Navbar = () => {
           className="btn btn-ghost text-xl font-bold gap-2 px-2 hover:bg-transparent"
         >
           LuminaMind
-          <span role="img" aria-labelledby="heart">
-            ❤️
-          </span>
         </Link>
       </div>
 
@@ -51,7 +48,7 @@ const Navbar = () => {
         )}
 
         {/* NAVIGATION LINKS TIMELINE */}
-        <ul className="menu menu-horizontal px-1 [&_a.active]:bg-primary [&_a.active]:text-primary-content! [&_li>*:not(.active):hover]:text-base-content/70 [&_li>*]:transition-colors gap-1.5 font-medium shrink-0">
+        <ul className="menu menu-horizontal px-1 [&_a.active]:bg-neutral [&_a.active]:text-white! [&_li>*:not(.active):hover]:text-base-content/70 [&_li>*]:transition-colors gap-1.5 font-medium shrink-0">
           {!loading &&
             (signedIn ? (
               <>
